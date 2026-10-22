@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Clima App",
-    "description": "Testes da API do projeto: consulta de clima (Open-Meteo), notícias (NewsData.io) e casos de erro. Ajuste a variável baseUrl para o seu servidor (XAMPP, php -S ou Vercel).",
+    "name": "Consulta de Clima - API Open-Meteo",
+    "description": "Trabalho 1 - Linguagem de Programação VIII (UNIFEG). Testes da API do projeto: consulta de clima (Open-Meteo), notícias (NewsData.io) e casos de erro. Ajuste a variável baseUrl para o seu servidor (XAMPP, php -S ou Vercel).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
