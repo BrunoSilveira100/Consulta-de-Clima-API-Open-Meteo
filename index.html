@@ -16,7 +16,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/estilos.css">
 </head>
 <body>
@@ -42,7 +42,11 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/></svg>
         <span>Limpar</span>
       </button>
-      <button id="btn-consultar" type="submit">Consultar</button>
+      <button id="btn-consultar" class="btn-principal" type="submit">
+        <span class="rotulo">Consultar</span>
+        <svg class="seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span class="spinner" aria-hidden="true"></span>
+      </button>
     </form>
     <div class="progresso" id="progresso"></div>
   </div>
@@ -75,7 +79,7 @@
 
   <section class="noticias" id="noticias">
     <div class="cab">
-      <h3 class="secao-titulo">Notícias sobre o clima</h3>
+      <h3 class="titulo-secao">Notícias <em>sobre o clima</em></h3>
       <span class="atualizado" id="noticias-atualizado"></span>
     </div>
     <div class="lista-noticias" id="lista-noticias">
@@ -87,7 +91,7 @@
 
   <section class="historico">
     <div class="cab">
-      <h3 class="secao-titulo">Suas últimas consultas</h3>
+      <h3 class="titulo-secao">Suas <em>últimas consultas</em></h3>
       <span class="dica">só nesta visita · clique numa linha para consultar de novo</span>
     </div>
     <div class="tabela-wrap">

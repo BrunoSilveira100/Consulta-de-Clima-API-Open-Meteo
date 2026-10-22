@@ -173,7 +173,8 @@ async function consultar(cidade) {
 
     const btn = $("#btn-consultar");
     btn.disabled = true;
-    btn.textContent = "Buscando…";
+    btn.classList.add("carregando");
+    btn.querySelector(".rotulo").textContent = "Buscando";
     // o clique "afunda" o botão: é a causa visível da animação que vem depois
     gsap.fromTo(btn, { scale: .94 }, { scale: 1, duration: .5, ease: "back.out(1.7)" });
     progresso.iniciar();
@@ -188,7 +189,8 @@ async function consultar(cidade) {
     }
 
     btn.disabled = false;
-    btn.textContent = "Consultar";
+    btn.classList.remove("carregando");
+    btn.querySelector(".rotulo").textContent = "Consultar";
     await progresso.terminar();
 
     if (!resp.ok) {
@@ -485,6 +487,46 @@ addEventListener("keydown", e => {
 
 gsap.from(".vazio > *", { y: 40, opacity: 0, duration: .6, stagger: .08, ease: "power4.out" });
 gsap.from(".sugestoes button", { y: 14, opacity: 0, duration: .4, stagger: .05, ease: "power4.out", delay: .3 });
+
+/* ---------- Microinterações dos botões ---------- */
+// ondulação que nasce no ponto exato do clique (delegação: vale também para
+// os botões de sugestão recriados pelo "Limpar")
+document.addEventListener("pointerdown", e => {
+    const b = e.target.closest(".btn-principal, .limpar, .sugestoes button");
+    if (!b || reduzMovimento) return;
+    const r = b.getBoundingClientRect();
+    const d = Math.max(r.width, r.height) * 2.2;
+    const onda = document.createElement("span");
+    onda.className = "onda";
+    onda.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+    b.appendChild(onda);
+    onda.addEventListener("animationend", () => onda.remove());
+});
+
+// botão principal "magnético": acompanha levemente o cursor (só com mouse)
+if (!reduzMovimento && matchMedia("(pointer: fine)").matches) {
+    const principal = $("#btn-consultar");
+    const moverX = gsap.quickTo(principal, "x", { duration: .45, ease: "power3.out" });
+    const moverY = gsap.quickTo(principal, "y", { duration: .45, ease: "power3.out" });
+    principal.addEventListener("pointermove", e => {
+        const r = principal.getBoundingClientRect();
+        moverX((e.clientX - r.left - r.width / 2) * .22);
+        moverY((e.clientY - r.top - r.height / 2) * .35);
+    });
+    principal.addEventListener("pointerleave", () => { moverX(0); moverY(0); });
+}
+
+/* ---------- Títulos de seção: sobem e sublinham ao entrar na tela ---------- */
+document.querySelectorAll(".titulo-secao").forEach(titulo => {
+    gsap.set(titulo, { y: 28, opacity: 0 });
+    const obs = new IntersectionObserver(entradas => {
+        if (!entradas[0].isIntersecting) return;
+        obs.disconnect();
+        gsap.to(titulo, { y: 0, opacity: 1, duration: .75, ease: "power4.out" });
+        titulo.classList.add("visivel");
+    }, { threshold: .6 });
+    obs.observe(titulo);
+});
 carregarHistorico();
 
 /* ---------- Notícias (NewsData.io via noticias.php, com cache no servidor) ---------- */

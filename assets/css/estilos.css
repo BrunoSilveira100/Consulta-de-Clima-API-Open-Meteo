@@ -151,6 +151,62 @@
     cursor: pointer;
   }
   .busca button:disabled { cursor: progress; }
+
+  /* ===== Botão principal: brilho, seta, sombra e spinner ===== */
+  .busca .btn-principal {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px 12px 24px;
+    transition: box-shadow .3s, background-color .4s;
+  }
+  .btn-principal:hover { box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--accent) 85%, transparent); }
+  .btn-principal .seta { width: 16px; height: 16px; transition: transform .35s cubic-bezier(.3, 1.5, .5, 1); }
+  .btn-principal:hover .seta { transform: translateX(4px); }
+  .btn-principal::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -60%;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+  .btn-principal:hover::after { animation: brilho .85s cubic-bezier(.4, 0, .2, 1); }
+  @keyframes brilho { to { left: 130%; } }
+  .btn-principal .spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255, 255, 255, .35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: girar .7s linear infinite;
+  }
+  .btn-principal.carregando .spinner { display: block; }
+  .btn-principal.carregando .seta { display: none; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  /* ondulação a partir do ponto do clique (criada pelo JS) */
+  .onda {
+    position: absolute;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .28;
+    transform: scale(0);
+    pointer-events: none;
+    animation: onda .6s cubic-bezier(.2, .8, .2, 1) forwards;
+  }
+  @keyframes onda { to { transform: scale(1); opacity: 0; } }
+  .busca .limpar, .sugestoes button { position: relative; overflow: hidden; }
+  .busca .limpar:active, .sugestoes button:active { transform: scale(.95); }
+
+  /* chave de tema: a bolinha "estica" enquanto é pressionada */
+  .tema:active .knob { width: 31px; }
+  :root[data-tema="escuro"] .tema:active .knob { transform: translateX(28px); }
+  .tema .knob { transition: transform .4s cubic-bezier(.3, 1.5, .5, 1), width .2s ease; }
   .busca .limpar {
     display: flex;
     align-items: center;
@@ -279,6 +335,44 @@
     border-radius: 28px;
     padding: 28px;
   }
+  /* ===== Títulos de seção: grotesca pesada + serifa itálica em destaque ===== */
+  .titulo-secao {
+    font-size: clamp(26px, 3.2vw, 38px);
+    font-weight: 800;
+    letter-spacing: -.035em;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .titulo-secao em {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.12em;
+    letter-spacing: -.01em;
+    color: var(--accent);
+    position: relative;
+    white-space: nowrap;
+    transition: color .7s;
+  }
+  /* sublinhado que se desenha quando o título aparece na tela */
+  .titulo-secao em::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    bottom: -.04em;
+    height: .07em;
+    border-radius: 1em;
+    background: currentColor;
+    opacity: .4;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .9s cubic-bezier(.2, .8, .2, 1) .3s;
+  }
+  .titulo-secao.visivel em::after { transform: scaleX(1); }
+  :root[data-tema="escuro"] .titulo-secao em { color: color-mix(in srgb, var(--accent) 70%, #fff); }
+  .noticias .cab, .historico .cab { flex-wrap: wrap; }
+
   .painel h3, .secao-titulo {
     font-family: var(--mono);
     font-size: 12px;
@@ -410,6 +504,11 @@
       padding-bottom: 6px;
     }
     .noticia { scroll-snap-align: start; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-principal::after, .onda { display: none; }
+    .titulo-secao em::after { transition: none; }
   }
 
   @media (max-width: 860px) {
