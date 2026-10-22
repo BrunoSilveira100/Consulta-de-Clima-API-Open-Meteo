@@ -1,0 +1,6 @@
+# chave local e modelo (na Vercel a chave vem da variável NEWSDATA_API_KEY)
+api/_local.php
+api/_local.exemplo.php
+
+# documentação que não precisa ir para o site
+docs/postman
