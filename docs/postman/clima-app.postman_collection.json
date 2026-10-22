@@ -1,0 +1,52 @@
+{
+  "info": {
+    "name": "Clima App",
+    "description": "Testes da API do projeto: consulta de clima (Open-Meteo), notícias (NewsData.io) e casos de erro. Ajuste a variável baseUrl para o seu servidor (XAMPP, php -S ou Vercel).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" }
+  ],
+  "item": [
+    {
+      "name": "1 - API pública Open-Meteo (Manaus)",
+      "request": {
+        "method": "GET",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=-3.1019&longitude=-60.025&current=temperature_2m,wind_speed_10m,weather_code&timezone=auto",
+        "description": "Requisição direta à API pública Open-Meteo. Esperado: 200 com JSON de previsão."
+      }
+    },
+    {
+      "name": "2 - Consultar clima de uma cidade",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/clima.php?cidade=Manaus",
+        "description": "O servidor geocodifica a cidade, consulta a Open-Meteo e devolve clima atual + previsão de 5 dias. Esperado: 200."
+      }
+    },
+    {
+      "name": "3 - Últimas notícias sobre o clima",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/noticias.php",
+        "description": "Notícias de meteorologia da NewsData.io, limpas e em cache por 15 min. Esperado: 200 (ou 503 se a chave não estiver configurada)."
+      }
+    },
+    {
+      "name": "4 - ERRO proposital: cidade inexistente",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/clima.php?cidade=xqzptw",
+        "description": "Caso de erro: cidade inexistente. Esperado: 404 com {\"erro\": \"Cidade não encontrada...\"}."
+      }
+    },
+    {
+      "name": "5 - ERRO proposital: parâmetro cidade vazio",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/clima.php?cidade=",
+        "description": "Caso de erro: parâmetro obrigatório ausente. Esperado: 400 com mensagem de erro."
+      }
+    }
+  ]
+}
