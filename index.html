@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Clima</title>
+<link rel="icon" type="image/svg+xml" href="assets/img/clima-icone.svg">
+<script>
+  /* aplica o tema antes de desenhar a página, para não piscar */
+  (function () {
+      var salvo = null;
+      try { salvo = localStorage.getItem("tema"); } catch (e) {}
+      document.documentElement.dataset.tema =
+          salvo || (matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro");
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/estilos.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="marca"><img src="assets/img/clima-icone.svg" width="96" height="96" alt=""><img class="so-claro" src="assets/img/clima-horizontal.svg" height="64" alt="clima"><img class="so-escuro" src="assets/img/clima-reverso.svg" height="64" alt="clima"></div>
+    <div class="direita">
+      <div class="info">Open-Meteo · PHP</div>
+      <button id="btn-tema" class="tema" type="button" role="switch" aria-checked="false" aria-label="Tema escuro" title="Alternar tema claro/escuro">
+        <span class="knob"></span>
+        <svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+        <svg class="lua" viewBox="0 0 24 24"><path d="M15.5 3.2a8.8 8.8 0 1 0 5.3 12.9A7.2 7.2 0 0 1 15.5 3.2z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="busca">
+    <form id="form-busca">
+      <input id="cidade" placeholder="Digite o nome da cidade (ex.: Manaus)" autocomplete="off">
+      <kbd>/</kbd>
+      <button id="btn-limpar" class="limpar" type="button" title="Limpar consulta (Esc)" hidden>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/></svg>
+        <span>Limpar</span>
+      </button>
+      <button id="btn-consultar" type="submit">Consultar</button>
+    </form>
+    <div class="progresso" id="progresso"></div>
+  </div>
+  <div class="erro" id="erro" role="alert"></div>
+
+  <div class="grid">
+    <section class="ceu" id="ceu">
+      <canvas id="particulas"></canvas>
+      <div class="flash" id="flash"></div>
+      <div id="palco">
+        <div class="cena vazio">
+          <h2>Como está o tempo por aí?</h2>
+          <p>Busque uma cidade e o painel muda de cor conforme o clima de lá.</p>
+          <div class="sugestoes">
+            <button type="button">Manaus</button>
+            <button type="button">Gramado</button>
+            <button type="button">Recife</button>
+            <button type="button">Lisboa</button>
+            <button type="button">Reykjavik</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="painel">
+      <h3>Próximos 5 dias</h3>
+      <div id="lista-previsao"><p class="placeholder">Sem dados ainda.</p></div>
+    </section>
+  </div>
+
+  <section class="noticias" id="noticias">
+    <div class="cab">
+      <h3 class="secao-titulo">Notícias sobre o clima</h3>
+      <span class="atualizado" id="noticias-atualizado"></span>
+    </div>
+    <div class="lista-noticias" id="lista-noticias">
+      <div class="noticia esqueleto"><div class="capa"></div><div class="corpo"><div class="linha" style="width:40%"></div><div class="linha"></div><div class="linha" style="width:75%"></div></div></div>
+      <div class="noticia esqueleto"><div class="capa"></div><div class="corpo"><div class="linha" style="width:40%"></div><div class="linha"></div><div class="linha" style="width:75%"></div></div></div>
+      <div class="noticia esqueleto"><div class="capa"></div><div class="corpo"><div class="linha" style="width:40%"></div><div class="linha"></div><div class="linha" style="width:75%"></div></div></div>
+    </div>
+  </section>
+
+  <section class="historico">
+    <div class="cab">
+      <h3 class="secao-titulo">Suas últimas consultas</h3>
+      <span class="dica">só nesta visita · clique numa linha para consultar de novo</span>
+    </div>
+    <div class="tabela-wrap">
+      <table id="tabela">
+        <thead>
+          <tr>
+            <th>ID</th><th>Cidade</th><th>Temp. (°C)</th>
+            <th>Vento (km/h)</th><th>Condição</th><th>Data</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<template id="tpl-resultado">
+  <div class="topo">
+    <div class="coords"></div>
+    <div class="icone"></div>
+  </div>
+  <div class="cidade"></div>
+  <div class="temp"><span class="num">0</span><sup>°C</sup></div>
+  <div class="descricao"><span class="txt"></span><span class="cod"></span></div>
+  <div class="metricas">
+    <div class="metrica"><div class="rotulo">Vento</div><div class="valor" data-m="vento"></div></div>
+    <div class="metrica"><div class="rotulo">Umidade</div><div class="valor" data-m="umidade"></div></div>
+    <div class="metrica"><div class="rotulo">Sensação</div><div class="valor" data-m="sensacao"></div></div>
+    <div class="metrica"><div class="rotulo">Registro nº</div><div class="valor" data-m="id"></div></div>
+  </div>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
