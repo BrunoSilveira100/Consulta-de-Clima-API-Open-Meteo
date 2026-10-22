@@ -516,14 +516,13 @@ if (!reduzMovimento && matchMedia("(pointer: fine)").matches) {
     principal.addEventListener("pointerleave", () => { moverX(0); moverY(0); });
 }
 
-/* ---------- Títulos de seção: sobem e sublinham ao entrar na tela ---------- */
+/* ---------- Títulos de seção: sobem ao entrar na tela ---------- */
 document.querySelectorAll(".titulo-secao").forEach(titulo => {
     gsap.set(titulo, { y: 28, opacity: 0 });
     const obs = new IntersectionObserver(entradas => {
         if (!entradas[0].isIntersecting) return;
         obs.disconnect();
         gsap.to(titulo, { y: 0, opacity: 1, duration: .75, ease: "power4.out" });
-        titulo.classList.add("visivel");
     }, { threshold: .6 });
     obs.observe(titulo);
 });

@@ -335,43 +335,17 @@
     border-radius: 28px;
     padding: 28px;
   }
-  /* ===== Títulos de seção: grotesca pesada + serifa itálica em destaque ===== */
+  /* ===== Títulos de seção: Roboto em negrito, numa cor só ===== */
   .titulo-secao {
-    font-size: clamp(26px, 3.2vw, 38px);
-    font-weight: 800;
-    letter-spacing: -.035em;
-    line-height: 1.05;
-    color: var(--text);
-    margin-bottom: 20px;
-  }
-  .titulo-secao em {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
-    font-size: 1.12em;
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    font-size: clamp(24px, 2.6vw, 30px);
+    font-weight: 700;
     letter-spacing: -.01em;
-    color: var(--accent);
-    position: relative;
-    white-space: nowrap;
-    transition: color .7s;
+    line-height: 1.2;
+    color: color-mix(in srgb, var(--text) 85%, var(--bg));
+    margin-bottom: 18px;
   }
-  /* sublinhado que se desenha quando o título aparece na tela */
-  .titulo-secao em::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0;
-    bottom: -.04em;
-    height: .07em;
-    border-radius: 1em;
-    background: currentColor;
-    opacity: .4;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform .9s cubic-bezier(.2, .8, .2, 1) .3s;
-  }
-  .titulo-secao.visivel em::after { transform: scaleX(1); }
-  :root[data-tema="escuro"] .titulo-secao em { color: color-mix(in srgb, var(--accent) 70%, #fff); }
-  .noticias .cab, .historico .cab { flex-wrap: wrap; }
+  .noticias .cab, .historico .cab { flex-wrap: wrap; gap: 4px 16px; }
 
   .painel h3, .secao-titulo {
     font-family: var(--mono);
@@ -508,7 +482,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .btn-principal::after, .onda { display: none; }
-    .titulo-secao em::after { transition: none; }
   }
 
   @media (max-width: 860px) {
