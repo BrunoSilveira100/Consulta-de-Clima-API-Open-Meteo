@@ -1,0 +1,8 @@
+# chave local da NewsData.io (nunca versionar)
+api/_local.php
+
+# configurações locais de ferramentas (só na raiz)
+/.vercel/
+/.postman/
+/postman/
+/.vscode/
