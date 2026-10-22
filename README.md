@@ -31,10 +31,10 @@
 | **Disciplina** | Linguagem de Programação VIII |
 | **Curso** | Ciência da Computação — 8º período — UNIFEG |
 | **Professor** | José Bruno de Oliveira |
-| **Grupo** | Bruno Henrique e Sanderson |
+| **Autor** | Bruno Henrique Silveira |
 | **API sorteada** | [Open-Meteo](https://open-meteo.com/) — previsão do tempo por cidade |
 
-**Objetivo:** construir uma aplicação que consome uma API pública e mostrar que o grupo entende o **caminho dos dados entre cada camada**: interface → servidor PHP → API pública, com testes no Postman. O foco do trabalho é o fluxo, e não a aparência da tela.
+**Objetivo:** construir uma aplicação que consome uma API pública e demonstrar o entendimento do **caminho dos dados entre cada camada**: interface → servidor PHP → API pública, com testes no Postman. O foco do trabalho é o fluxo, e não a aparência da tela.
 
 **O que a aplicação faz:** o usuário digita o nome de uma cidade. O servidor PHP descobre as coordenadas dela na Geocoding API da Open-Meteo, consulta o clima atual e a previsão de 5 dias e devolve tudo em JSON para a interface. Como extensão, a página também mostra notícias de meteorologia vindas da NewsData.io.
 
@@ -194,5 +194,5 @@ PHP 8 · HTML · CSS · JavaScript · [GSAP](https://gsap.com/) (animações) ·
 ---
 
 <p align="center">
-  Bruno Henrique e Sanderson · Linguagem de Programação VIII · UNIFEG
+  Bruno Henrique Silveira · <a href="https://github.com/BrunoSilveira100">GitHub</a> · Linguagem de Programação VIII · UNIFEG
 </p>
