@@ -43,6 +43,7 @@ $cliUrl  = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$l
          . "&current=temperature_2m,wind_speed_10m,weather_code,is_day,relative_humidity_2m,apparent_temperature,precipitation_probability"
          . "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
          . ",sunrise,sunset,precipitation_sum,precipitation_hours,wind_speed_10m_max,uv_index_max"
+         . "&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day"
          . "&forecast_days=5&timezone=auto";
 $cliJson = @file_get_contents($cliUrl);
 
@@ -56,6 +57,19 @@ $clima   = json_decode($cliJson, true);
 $temp    = $clima["current"]["temperature_2m"];
 $vento   = $clima["current"]["wind_speed_10m"];
 $codigo  = $clima["current"]["weather_code"];
+
+/* previsão hora a hora agrupada por dia ("2026-10-25" => [ {hora, temp, ...}, ... ]) */
+$horasPorDia = [];
+foreach ($clima["hourly"]["time"] ?? [] as $k => $momento) {
+    $horasPorDia[substr($momento, 0, 10)][] = [
+        "hora"      => substr($momento, 11, 5),
+        "temp"      => $clima["hourly"]["temperature_2m"][$k] ?? null,
+        "chuva_pct" => $clima["hourly"]["precipitation_probability"][$k] ?? null,
+        "chuva_mm"  => $clima["hourly"]["precipitation"][$k] ?? null,
+        "codigo"    => $clima["hourly"]["weather_code"][$k] ?? null,
+        "dia"       => (bool)($clima["hourly"]["is_day"][$k] ?? 1),
+    ];
+}
 
 /* monta a lista de previsão dos próximos dias */
 $previsao = [];
@@ -73,6 +87,7 @@ for ($i = 0; $i < 5; $i++) {
         "chuva_horas"   => $clima["daily"]["precipitation_hours"][$i] ?? null,
         "vento_max_kmh" => $clima["daily"]["wind_speed_10m_max"][$i] ?? null,
         "uv_max"        => $clima["daily"]["uv_index_max"][$i] ?? null,
+        "horas"         => $horasPorDia[$clima["daily"]["time"][$i]] ?? [],
     ];
 }
 
@@ -93,6 +108,7 @@ echo json_encode([
         "umidade"       => (int)$clima["current"]["relative_humidity_2m"],
         "sensacao_c"    => (float)$clima["current"]["apparent_temperature"],
         "chuva_pct"     => $clima["current"]["precipitation_probability"] ?? null,   // chance de chuva agora
+        "hora_local"    => isset($clima["current"]["time"]) ? substr($clima["current"]["time"], 11, 5) : null,   // fuso da cidade
     ],
     "previsao"  => $previsao,
 ]);

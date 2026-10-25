@@ -213,6 +213,7 @@ async function consultar(cidade) {
 
     ultimoId = dados.id;
     revelar(dados);
+    horaLocalCidade = dados.clima.hora_local;   // hoje, a faixa hora a hora começa na hora atual da cidade
     renderizarPrevisao(dados.previsao);
     carregarHistorico();
 }
@@ -533,9 +534,143 @@ function selecionarDia(previsao, indice, atraso = 0) {
     }
 
     caixa.append(cab, grade);
+
+    // hoje: só das horas que ainda vão acontecer (no fuso da cidade)
+    const horas = (p.horas || []).filter(h =>
+        indice !== 0 || !horaLocalCidade || h.hora.slice(0, 2) >= horaLocalCidade.slice(0, 2));
+    const extras = [];
+    if (horas.length) {
+        const secao = montarHoraAHora(horas, indice === 0);
+        caixa.appendChild(secao);
+        extras.push(secao);
+    }
+
     caixa.hidden = false;
-    gsap.fromTo([cab, ...grade.children], { y: 12, opacity: 0 },
+    gsap.fromTo([cab, ...grade.children, ...extras], { y: 12, opacity: 0 },
         { y: 0, opacity: 1, duration: .4, stagger: .05, ease: "power4.out", delay: atraso });
+}
+
+/* ---------- Faixa hora a hora (rolagem horizontal) ---------- */
+let horaLocalCidade = null;
+const LARGURA_HORA = 54;   // px por coluna
+
+function montarHoraAHora(horas, ehHoje) {
+    const secao = document.createElement("div");
+    secao.className = "hora-a-hora";
+
+    // aviso: janela em que a chuva é mais provável
+    const chuvosas = horas.filter(h => h.chuva_pct >= 50 || h.chuva_mm >= 0.5);
+    const aviso = document.createElement("p");
+    aviso.className = "aviso-chuva" + (chuvosas.length ? " com-chuva" : "");
+    const horaH = h => Number(h.hora.slice(0, 2)) + "h";
+    aviso.textContent = chuvosas.length
+        ? "Leve guarda-chuva: chuva mais provável das " + horaH(chuvosas[0]) + " às " + horaH(chuvosas[chuvosas.length - 1])
+        : "Sem chuva significativa prevista " + (ehHoje ? "até o fim do dia" : "neste dia");
+    secao.appendChild(aviso);
+
+    const rolagem = document.createElement("div");
+    rolagem.className = "horas-rolagem";
+    rolagem.tabIndex = 0;
+    rolagem.setAttribute("aria-label", "Previsão hora a hora. Role para o lado para ver mais horários.");
+
+    const grade = document.createElement("div");
+    grade.className = "horas-grade";
+    grade.style.gridTemplateColumns = `repeat(${horas.length}, ${LARGURA_HORA}px)`;
+    const celula = (classe, texto) => {
+        const el = document.createElement("div");
+        el.className = classe;
+        if (texto != null) el.textContent = texto;
+        grade.appendChild(el);
+        return el;
+    };
+
+    // linha 1: horário
+    horas.forEach((h, i) => celula("h-hora" + (ehHoje && i === 0 ? " agora" : ""),
+        ehHoje && i === 0 ? "Agora" : Number(h.hora.slice(0, 2)) + "h"));
+
+    // linha 2: ícone do tempo (lua quando é noite)
+    horas.forEach(h => {
+        const el = celula("h-icone");
+        el.innerHTML = icone(grupo(h.codigo), h.dia);
+        el.style.color = corTemp(h.temp);
+        el.title = DESCRICOES[h.codigo] || "";
+    });
+
+    // linha 3: temperatura
+    horas.forEach(h => celula("h-temp", h.temp != null ? Math.round(h.temp) + "°" : "–"));
+
+    // linha 4: curva da temperatura ligando os pontos (ocupa a largura toda)
+    const temps = horas.map(h => h.temp ?? 0);
+    const tMin = Math.min(...temps), tMax = Math.max(...temps);
+    const largura = horas.length * LARGURA_HORA, altura = 34;
+    const pontos = temps.map((t, i) => [i * LARGURA_HORA + LARGURA_HORA / 2,
+        5 + (1 - (t - tMin) / (tMax - tMin || 1)) * (altura - 10)]);
+    const curva = celula("h-curva");
+    curva.innerHTML = `<svg width="${largura}" height="${altura}" viewBox="0 0 ${largura} ${altura}">` +
+        `<polyline points="${pontos.map(p => p.join(",")).join(" ")}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+        pontos.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3"/>`).join("") + `</svg>`;
+
+    // linha 5: chance de chuva
+    horas.forEach(h => {
+        const el = celula("chuva" + (h.chuva_pct >= 50 ? " alta" : ""));
+        el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.5-6 5.5-10z" fill="currentColor"/></svg>';
+        el.append(h.chuva_pct != null ? h.chuva_pct + "%" : "–");
+    });
+
+    // linha 6: milímetros de chuva por hora (escala mínima de 2 mm para garoa não parecer temporal)
+    const escalaMm = Math.max(2, ...horas.map(h => h.chuva_mm || 0));
+    horas.forEach(h => {
+        const el = celula("h-barra");
+        const barra = document.createElement("i");
+        const mm = h.chuva_mm || 0;
+        barra.style.height = (mm > 0 ? Math.max(3, (mm / escalaMm) * 34) : 0) + "px";
+        const valor = document.createElement("span");
+        valor.textContent = numeroBR(mm);
+        el.append(barra, valor);
+    });
+
+    rolagem.appendChild(grade);
+    secao.appendChild(rolagem);
+
+    const legenda = document.createElement("p");
+    legenda.className = "legenda-horas";
+    legenda.textContent = "Barras: milímetros de chuva por hora · role para o lado";
+    secao.appendChild(legenda);
+
+    ativarRolagemHorizontal(rolagem);
+    return secao;
+}
+
+// roda do mouse rola para o lado, arrastar com o mouse rola a faixa,
+// e um esmaecido na borda indica que há mais horários
+function ativarRolagemHorizontal(rolagem) {
+    const atualizarBorda = () =>
+        rolagem.classList.toggle("no-fim", rolagem.scrollLeft >= rolagem.scrollWidth - rolagem.clientWidth - 2);
+    rolagem.addEventListener("scroll", atualizarBorda, { passive: true });
+    requestAnimationFrame(atualizarBorda);
+
+    rolagem.addEventListener("wheel", e => {
+        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;   // trackpad já rola na horizontal
+        const max = rolagem.scrollWidth - rolagem.clientWidth;
+        const podeRolar = e.deltaY > 0 ? rolagem.scrollLeft < max - 1 : rolagem.scrollLeft > 0;
+        if (!podeRolar) return;                                 // nas pontas, a página volta a rolar
+        e.preventDefault();
+        rolagem.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    let arrasto = null;
+    rolagem.addEventListener("pointerdown", e => {
+        if (e.pointerType !== "mouse") return;                  // no toque, a rolagem nativa já funciona
+        arrasto = { x: e.clientX, inicio: rolagem.scrollLeft };
+        rolagem.classList.add("arrastando");
+        rolagem.setPointerCapture(e.pointerId);
+    });
+    rolagem.addEventListener("pointermove", e => {
+        if (arrasto) rolagem.scrollLeft = arrasto.inicio - (e.clientX - arrasto.x);
+    });
+    const soltar = () => { arrasto = null; rolagem.classList.remove("arrastando"); };
+    rolagem.addEventListener("pointerup", soltar);
+    rolagem.addEventListener("pointercancel", soltar);
 }
 
 /* ---------- Histórico ---------- */

@@ -133,6 +133,19 @@ Cada dia da previsão é clicável (mouse, toque ou teclado com Enter ou espaço
 | Vento máximo | `vento_max_kmh` | `daily=wind_speed_10m_max` | fraco (< 20), moderado (< 40), forte (< 62), muito forte |
 | Índice UV máximo | `uv_max` | `daily=uv_index_max` | Selo colorido e recomendação pela escala da OMS: baixo, moderado, alto, muito alto, extremo |
 
+### Previsão hora a hora
+
+Abaixo dos detalhes, uma faixa com **rolagem horizontal** mostra o dia selecionado hora a hora: horário, ícone (lua à noite), temperatura com uma curva ligando os pontos, chance de chuva e barras com os milímetros de chuva de cada hora. No dia de hoje, a faixa começa em **"Agora"**, a hora atual da cidade (`clima.hora_local`). Nos outros dias, mostra as 24 horas.
+
+Acima da faixa, um aviso resume a janela de chuva: "Leve guarda-chuva: chuva mais provável das 17h às 23h". Contam as horas com chance ≥ 50% ou ≥ 0,5 mm. Para rolar, funcionam o toque (celular), a roda do mouse, arrastar com o mouse e as setas do teclado. Um esmaecido na borda direita indica que há mais horários.
+
+| Campo (`previsao[].horas[]`) | Parâmetro da Open-Meteo |
+| --- | --- |
+| `hora`, `temp` | `hourly=temperature_2m` |
+| `chuva_pct`, `chuva_mm` | `hourly=precipitation_probability,precipitation` |
+| `codigo`, `dia` | `hourly=weather_code,is_day` |
+
+A API agrupa as 120 horas (5 dias × 24 h) por data. A resposta completa fica em torno de 11 KB, e continua sendo uma única chamada à Open-Meteo.
 Os horários vêm no fuso da cidade consultada (`timezone=auto`). Os campos novos chegam na mesma requisição da previsão, sem chamadas extras. O motivo de incluir o UV: um dia com 0% de chuva pode ter índice UV 9 ("muito alto"), e essa informação não aparecia em nenhum outro lugar da tela.
 
 ## Testes no Postman
