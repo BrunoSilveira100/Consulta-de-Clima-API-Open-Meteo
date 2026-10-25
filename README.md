@@ -91,6 +91,33 @@ flowchart LR
 ```
 </details>
 
+## Probabilidade de chuva
+
+A chance de chuva aparece em três lugares da interface e vem de dois campos da Open-Meteo.
+
+| Campo da resposta | Parâmetro pedido à Open-Meteo | Significado |
+| --- | --- | --- |
+| `clima.chuva_pct` | `current=precipitation_probability` | Chance de precipitação no momento da consulta |
+| `previsao[].chuva_pct` | `daily=precipitation_probability_max` | **Maior** chance horária de precipitação ao longo do dia |
+
+Os dois valores são inteiros de 0 a 100. Se a Open-Meteo não enviar o dado, a API devolve `null` e a interface mostra "–".
+
+**Onde aparece na interface**
+
+| Local | O que mostra |
+| --- | --- |
+| Card do clima | Métrica **Chuva**, a primeira da linha (antes de umidade, vento e sensação) |
+| Próximos 5 dias | Gota e porcentagem em cada dia |
+| Suas últimas consultas | Coluna **Chuva**, com o valor congelado no momento de cada consulta |
+
+Na previsão e na tabela, a gota fica **azul a partir de 50%** (classe `.chuva.alta`) e atenuada abaixo disso. A regra é a mesma nos dois lugares, para manter uma leitura visual única.
+
+**Decisões e limitações**
+
+- **Máximo diário, não média.** É o critério usado pelos principais apps de clima. Um dia com uma pancada rápida à tarde aparece com chance alta, mesmo que o resto do dia seja seco.
+- **Divergência com outras fontes é esperada.** Cada provedor usa modelos meteorológicos diferentes. Na mesma cidade e na mesma hora, a Open-Meteo pode indicar 98% e outro serviço, 15%, principalmente com tempestades isoladas. A aplicação mostra fielmente o valor calculado pela Open-Meteo.
+- **Sem custo extra de requisição.** Os campos novos entram na mesma chamada que já buscava o clima atual e a previsão.
+
 ## Testes no Postman
 
 A coleção exportada está em [`docs/postman/clima-app.postman_collection.json`](docs/postman/clima-app.postman_collection.json). Ajuste a variável `baseUrl` para o endereço do seu servidor.
