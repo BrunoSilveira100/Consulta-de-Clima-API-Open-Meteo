@@ -107,7 +107,7 @@
   }
   .marca { display: flex; align-items: center; gap: 18px; }
   .marca img { display: block; width: auto; }
-  header .info { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  header .info { font-size: 13px; color: var(--muted); }
 
   /* ===== Busca ===== */
   .busca { position: relative; margin-bottom: 8px; }
@@ -347,14 +347,14 @@
   }
   .noticias .cab, .historico .cab { flex-wrap: wrap; gap: 4px 16px; }
 
-  .painel h3, .secao-titulo {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--muted);
-    margin-bottom: 18px;
+  /* título do card de previsão: mesmo padrão dos títulos de seção, menor */
+  .painel h3 {
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: color-mix(in srgb, var(--text) 85%, var(--bg));
+    margin-bottom: 14px;
   }
   .dia {
     display: grid;
@@ -435,7 +435,7 @@
   /* ===== Notícias ===== */
   .noticias { margin-top: 36px; }
   .noticias .cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .noticias .atualizado { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .noticias .atualizado { font-size: 13px; color: var(--muted); }
   .lista-noticias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .noticia {
     display: flex;
