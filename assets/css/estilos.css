@@ -278,6 +278,15 @@
   }
   .vazio p { margin-top: 14px; color: color-mix(in srgb, var(--ink) 62%, transparent); max-width: 40ch; }
   .sugestoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .rotulo-sugestoes {
+    display: block;
+    margin-top: 22px;
+    font-size: 12px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .rotulo-sugestoes[hidden] { display: none; }
+  .rotulo-sugestoes + .sugestoes { margin-top: 8px; }
   .sugestoes button {
     font: inherit;
     font-size: 14px;

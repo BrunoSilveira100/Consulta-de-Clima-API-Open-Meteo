@@ -1,6 +1,7 @@
 <?php
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . "/_ranking.php";
 
 /* Sem banco de dados: o histórico de consultas fica só na página aberta
    (memória do navegador). Esta API apenas consulta o clima. */
@@ -67,7 +68,11 @@ for ($i = 0; $i < 5; $i++) {
     ];
 }
 
-/* 3) Resposta em JSON */
+/* 3) Conta a pesquisa no ranking das mais pesquisadas. Usa o nome oficial
+      da geocodificação, então "guaxupe" e "Guaxupé" somam na mesma cidade. */
+rankingRegistrar($nomeCidade);
+
+/* 4) Resposta em JSON */
 echo json_encode([
     "cidade"    => $nomeCidade,
     "latitude"  => (float)$lat,

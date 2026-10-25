@@ -72,6 +72,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | `GET` | `/api/clima.php?cidade={nome}` | Geocodifica a cidade e devolve o clima atual e a previsão de 5 dias | `200` sucesso · `400` parâmetro vazio · `404` cidade não encontrada · `502` falha na Open-Meteo |
 | `GET` | `/api/noticias.php` | Até 6 notícias de meteorologia, limpas e em cache | `200` sucesso · `502` falha na NewsData.io · `503` chave não configurada |
+| `GET` | `/api/ranking.php` | As 5 cidades mais pesquisadas por todos os visitantes | `200` (lista vazia se o ranking ainda não tiver dados) |
 
 <details>
 <summary>Exemplo de resposta de <code>/api/clima.php?cidade=Manaus</code></summary>
@@ -106,6 +107,7 @@ A coleção exportada está em [`docs/postman/clima-app.postman_collection.json`
 | 1 | Direto na API pública Open-Meteo (Manaus) | `GET` | `200` |
 | 2 | Servidor: consultar o clima de uma cidade | `GET` | `200` |
 | 3 | Servidor: últimas notícias sobre o clima | `GET` | `200` |
+| 3b | Servidor: cidades mais pesquisadas | `GET` | `200` |
 | 4 | **Erro proposital:** cidade inexistente (`xqzptw`) | `GET` | `404` |
 | 5 | **Erro proposital:** parâmetro `cidade` vazio | `GET` | `400` |
 
@@ -155,11 +157,21 @@ A coleção exportada está em [`docs/postman/clima-app.postman_collection.json`
 - **Proteção contra XSS:** todo dado vindo de fora entra na página por `textContent`, nunca por `innerHTML`.
 - **Limpeza dos dados externos:** as notícias passam por deduplicação, remoção de HTML, validação de links (só `http(s)`) e normalização de datas.
 
+## Cidades mais pesquisadas
+
+Os botões da tela inicial mostram as **5 cidades mais pesquisadas por todos os visitantes**. Quando o ranking ainda tem menos de 5 cidades, a lista é completada com sugestões padrão.
+
+- **Onde conta:** no servidor (`api/clima.php`), e só quando a cidade é encontrada. Pesquisas inválidas não entram no ranking.
+- **Qualidade do dado:** a contagem usa o nome oficial devolvido pela geocodificação, então "guaxupe", "GUAXUPE" e "Guaxupé" somam na mesma cidade.
+- **Armazenamento:** na Vercel, um *sorted set* no Redis da Upstash (`ZINCRBY` para somar, `ZREVRANGE` para o top 5). No XAMPP, o arquivo `data/ranking.json`, com trava (`flock`) para gravações simultâneas não perderem contagens.
+- **Privacidade:** só o nome da cidade e um contador. Nenhum dado de quem pesquisou.
+- **Resiliência:** se o ranking falhar, a consulta do clima continua funcionando e os botões voltam às sugestões padrão.
+
 ## Sobre o banco de dados
 
 A versão entregue do trabalho gravava cada consulta numa tabela MySQL (`consultas_clima`) com prepared statements e tinha um endpoint para listar os registros salvos.
 
-**Este repositório é a versão de portfólio**, evoluída a partir do trabalho. Nela o banco foi removido de propósito: o histórico de consultas fica só na página aberta e some ao fechar a aba, sem guardar dados dos visitantes. A arquitetura em camadas foi mantida (interface → servidor → API).
+**Este repositório é a versão de portfólio**, evoluída a partir do trabalho. Nela o banco relacional foi removido de propósito: o histórico de consultas fica só na página aberta e some ao fechar a aba, sem guardar dados dos visitantes. O único dado persistido é o contador anônimo do ranking de cidades. A arquitetura em camadas foi mantida (interface → servidor → API).
 
 ## Estrutura do projeto
 
@@ -173,6 +185,8 @@ Consulta-de-Clima-API-Open-Meteo/
 ├── api/
 │   ├── clima.php           # Open-Meteo: geocodificação + previsão
 │   ├── noticias.php        # NewsData.io: busca, cache e limpeza
+│   ├── ranking.php         # top 5 cidades mais pesquisadas
+│   ├── _ranking.php        # contagem do ranking (Redis ou arquivo local)
 │   └── _local.exemplo.php  # modelo do arquivo de chave local
 ├── docs/
 │   ├── postman/            # coleção do Postman (.json)

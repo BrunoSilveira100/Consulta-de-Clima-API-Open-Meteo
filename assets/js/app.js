@@ -283,6 +283,49 @@ function ligarSugestoes(raiz) {
         b.addEventListener("click", () => consultar(b.textContent)));
 }
 
+/* ---------- Mais pesquisadas: ranking de todos os visitantes ---------- */
+const SUGESTOES_PADRAO = ["Manaus", "Gramado", "Recife", "Lisboa", "Reykjavik"];
+
+// busca o top 5 no servidor e troca os botões da tela inicial;
+// se ainda houver menos de 5 cidades no ranking, completa com as sugestões padrão
+async function carregarRanking(...outrasCenas) {
+    let top;
+    try {
+        const resp = await fetch("api/ranking.php");
+        top = (await resp.json()).cidades;
+    } catch (e) {
+        return;   // sem ranking: ficam as sugestões padrão
+    }
+    if (!Array.isArray(top) || top.length === 0) return;
+
+    const nomes = top.map(c => c.cidade);
+    for (const cidade of SUGESTOES_PADRAO) {
+        if (nomes.length >= 5) break;
+        if (!nomes.includes(cidade)) nomes.push(cidade);
+    }
+    const totais = Object.fromEntries(top.map(c => [c.cidade, c.total]));
+
+    const atualizar = (cena, animar) => {
+        const caixa = cena?.querySelector(".sugestoes");
+        if (!caixa) return;
+        const botoes = nomes.map(nome => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = nome;
+            if (totais[nome]) b.title = totais[nome] + (totais[nome] === 1 ? " pesquisa" : " pesquisas");
+            return b;
+        });
+        caixa.replaceChildren(...botoes);
+        cena.querySelector(".rotulo-sugestoes").hidden = false;
+        ligarSugestoes(cena);
+        if (animar) gsap.from(botoes, { y: 12, opacity: 0, duration: .4, stagger: .05, ease: "power4.out" });
+    };
+
+    atualizar(cenaInicial, false);                 // modelo usado pelo botão Limpar
+    outrasCenas.forEach(c => atualizar(c, false));
+    atualizar($("#palco .vazio"), true);           // tela inicial que está aberta agora
+}
+
 function limpar() {
     const btnLimpar = $("#btn-limpar");
     $("#cidade").value = "";
@@ -298,6 +341,7 @@ function limpar() {
     const palco = $("#palco");
     const cena = cenaInicial.cloneNode(true);
     ligarSugestoes(cena);
+    carregarRanking(cena);   // ao voltar para o início, o ranking já vem atualizado
 
     const tl = gsap.timeline();
     tl.to(document.documentElement, { ...neutro, duration: .7, ease: "power2.inOut" }, 0);
@@ -490,6 +534,7 @@ btnTema.addEventListener("click", () => {
 });
 
 ligarSugestoes(document);
+carregarRanking();
 $("#btn-limpar").addEventListener("click", limpar);
 $(".marca").addEventListener("click", limpar);
 addEventListener("keydown", e => {

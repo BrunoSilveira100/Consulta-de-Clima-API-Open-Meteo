@@ -33,6 +33,14 @@
       }
     },
     {
+      "name": "3b - Cidades mais pesquisadas",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/ranking.php",
+        "description": "Top 5 cidades mais pesquisadas por todos os visitantes (só nome e contador). Esperado: 200 com {\"cidades\": [...]}; lista vazia se ainda não houver dados."
+      }
+    },
+    {
       "name": "4 - ERRO proposital: cidade inexistente",
       "request": {
         "method": "GET",

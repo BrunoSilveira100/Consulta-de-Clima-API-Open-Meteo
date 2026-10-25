@@ -6,3 +6,6 @@ api/_local.php
 /.postman/
 /postman/
 /.vscode/
+
+# contagem local do ranking (XAMPP / php -S)
+/data/
