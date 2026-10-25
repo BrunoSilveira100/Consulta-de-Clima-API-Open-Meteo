@@ -370,7 +370,7 @@
   .dia .mini svg { width: 26px; height: 26px; display: block; }
   .dia .min { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
   /* chance de chuva do dia: gota + porcentagem, azul quando >= 50% */
-  .dia .chuva {
+  .dia .chuva, td .chuva {
     display: inline-flex;
     align-items: center;
     gap: 3px;
@@ -380,9 +380,10 @@
     color: var(--muted);
     opacity: .7;
   }
-  .dia .chuva svg { width: 12px; height: 12px; flex-shrink: 0; }
-  .dia .chuva.alta { color: #2f80d1; opacity: 1; }
-  :root[data-tema="escuro"] .dia .chuva.alta { color: #6db3f2; }
+  .dia .chuva svg, td .chuva svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .dia .chuva.alta, td .chuva.alta { color: #2f80d1; opacity: 1; }
+  :root[data-tema="escuro"] .dia .chuva.alta, :root[data-tema="escuro"] td .chuva.alta { color: #6db3f2; }
+  td .chuva { font-size: 14px; }
   .dia .max { font-weight: 600; font-variant-numeric: tabular-nums; }
   .trilho { position: relative; height: 6px; border-radius: 6px; background: var(--track); }
   .faixa {

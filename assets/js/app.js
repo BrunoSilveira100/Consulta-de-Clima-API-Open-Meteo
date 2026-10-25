@@ -206,6 +206,7 @@ async function consultar(cidade) {
         temperatura: dados.clima.temperatura_c,
         velocidade_vento: dados.clima.vento_kmh,
         codigo_clima: dados.clima.codigo_clima,
+        chuva_pct: dados.clima.chuva_pct,
         data_consulta: new Date().toISOString()
     });
     if (historicoSessao.length > 20) historicoSessao.pop();
@@ -394,7 +395,7 @@ function carregarHistorico() {
     if (listaDados.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 6;
+        td.colSpan = 7;
         td.className = "vazio-historico";
         td.textContent = "Suas consultas aparecem aqui enquanto esta página estiver aberta.";
         tr.appendChild(td);
@@ -420,6 +421,13 @@ function carregarHistorico() {
         chip.textContent = temp.toFixed(1).replace(".", ",") + "°";
         chip.style.setProperty("--c", corTemp(temp));
         cel("", "").appendChild(chip);
+        // chance de chuva no momento da consulta (mesma gota da previsão)
+        const chuva = document.createElement("span");
+        chuva.className = "chuva" + (l.chuva_pct >= 50 ? " alta" : "");
+        chuva.title = "Chance de chuva no momento da consulta";
+        chuva.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.5-6 5.5-10z" fill="currentColor"/></svg>';
+        chuva.append(l.chuva_pct != null ? l.chuva_pct + "%" : "–");
+        cel("", "").appendChild(chuva);
         cel("", l.velocidade_vento);
         cel("", (DESCRICOES[l.codigo_clima] || "–") + " (" + l.codigo_clima + ")");
         cel("data", new Date(l.data_consulta)
