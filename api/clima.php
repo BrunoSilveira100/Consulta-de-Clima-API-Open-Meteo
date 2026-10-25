@@ -42,6 +42,7 @@ $lon        = $geo["results"][0]["longitude"];
 $cliUrl  = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lon}"
          . "&current=temperature_2m,wind_speed_10m,weather_code,is_day,relative_humidity_2m,apparent_temperature,precipitation_probability"
          . "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
+         . ",sunrise,sunset,precipitation_sum,precipitation_hours,wind_speed_10m_max,uv_index_max"
          . "&forecast_days=5&timezone=auto";
 $cliJson = @file_get_contents($cliUrl);
 
@@ -65,6 +66,13 @@ for ($i = 0; $i < 5; $i++) {
         "temp_min" => $clima["daily"]["temperature_2m_min"][$i],
         "codigo"   => $clima["daily"]["weather_code"][$i],
         "chuva_pct" => $clima["daily"]["precipitation_probability_max"][$i] ?? null,   // maior chance do dia
+        // detalhes exibidos ao clicar no dia (horários já no fuso da cidade: timezone=auto)
+        "nascer_sol"    => isset($clima["daily"]["sunrise"][$i]) ? substr($clima["daily"]["sunrise"][$i], 11, 5) : null,
+        "por_sol"       => isset($clima["daily"]["sunset"][$i]) ? substr($clima["daily"]["sunset"][$i], 11, 5) : null,
+        "chuva_mm"      => $clima["daily"]["precipitation_sum"][$i] ?? null,
+        "chuva_horas"   => $clima["daily"]["precipitation_hours"][$i] ?? null,
+        "vento_max_kmh" => $clima["daily"]["wind_speed_10m_max"][$i] ?? null,
+        "uv_max"        => $clima["daily"]["uv_index_max"][$i] ?? null,
     ];
 }
 

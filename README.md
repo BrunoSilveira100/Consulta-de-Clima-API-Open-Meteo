@@ -85,7 +85,11 @@ flowchart LR
     "chuva_pct": 15
   },
   "previsao": [
-    { "data": "2026-10-04", "temp_max": 32.1, "temp_min": 24.5, "codigo": 2, "chuva_pct": 40 }
+    {
+      "data": "2026-10-04", "temp_max": 32.1, "temp_min": 24.5, "codigo": 2, "chuva_pct": 40,
+      "nascer_sol": "05:41", "por_sol": "17:52", "chuva_mm": 3.2, "chuva_horas": 4,
+      "vento_max_kmh": 18.5, "uv_max": 9.3
+    }
   ]
 }
 ```
@@ -117,6 +121,19 @@ Na previsão e na tabela, a gota fica **azul a partir de 50%** (classe `.chuva.a
 - **Máximo diário, não média.** É o critério usado pelos principais apps de clima. Um dia com uma pancada rápida à tarde aparece com chance alta, mesmo que o resto do dia seja seco.
 - **Divergência com outras fontes é esperada.** Cada provedor usa modelos meteorológicos diferentes. Na mesma cidade e na mesma hora, a Open-Meteo pode indicar 98% e outro serviço, 15%, principalmente com tempestades isoladas. A aplicação mostra fielmente o valor calculado pela Open-Meteo.
 - **Sem custo extra de requisição.** Os campos novos entram na mesma chamada que já buscava o clima atual e a previsão.
+
+## Detalhes do dia
+
+Cada dia da previsão é clicável (mouse, toque ou teclado com Enter ou espaço). Ao selecionar um dia, um painel abaixo da lista mostra informações que a linha resumida não comporta. "Hoje" já começa selecionado.
+
+| Informação | Campo da resposta | Parâmetro da Open-Meteo | Apoio à leitura |
+| --- | --- | --- | --- |
+| Nascer e pôr do sol | `nascer_sol`, `por_sol` | `daily=sunrise,sunset` | Horas de luz calculadas na interface |
+| Chuva acumulada | `chuva_mm`, `chuva_horas` | `daily=precipitation_sum,precipitation_hours` | "dia seco" quando não há horas de chuva |
+| Vento máximo | `vento_max_kmh` | `daily=wind_speed_10m_max` | fraco (< 20), moderado (< 40), forte (< 62), muito forte |
+| Índice UV máximo | `uv_max` | `daily=uv_index_max` | Selo colorido e recomendação pela escala da OMS: baixo, moderado, alto, muito alto, extremo |
+
+Os horários vêm no fuso da cidade consultada (`timezone=auto`). Os campos novos chegam na mesma requisição da previsão, sem chamadas extras. O motivo de incluir o UV: um dia com 0% de chuva pode ter índice UV 9 ("muito alto"), e essa informação não aparecia em nenhum outro lugar da tela.
 
 ## Testes no Postman
 

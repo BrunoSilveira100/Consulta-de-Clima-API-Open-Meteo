@@ -355,7 +355,10 @@ function limpar() {
     tl.from(cena.children, { y: 40, opacity: 0, duration: .5, stagger: .08, ease: "power4.out" }, "<.05");
 
     const dias = document.querySelectorAll("#lista-previsao .dia");
-    const placeholder = () => $("#lista-previsao").innerHTML = '<p class="placeholder">Sem dados ainda.</p>';
+    const placeholder = () => {
+        $("#lista-previsao").innerHTML = '<p class="placeholder">Sem dados ainda.</p>';
+        $("#detalhe-dia").hidden = true;
+    };
     if (dias.length)
         gsap.to(dias, { x: -30, opacity: 0, duration: .25, stagger: .04, ease: "power4.in", onComplete: placeholder });
     else
@@ -423,11 +426,116 @@ function renderizarPrevisao(previsao) {
         faixa.style.width = Math.max(4, escala(p.temp_max) - escala(p.temp_min)) + "%";
         faixa.style.background = `linear-gradient(90deg, ${corTemp(p.temp_min)}, ${corTemp(p.temp_max)})`;
         linha.querySelector(".mini").style.color = corTemp(p.temp_max);
+
+        // a linha vira um botão: clique, Enter ou espaço mostram os detalhes do dia
+        linha.tabIndex = 0;
+        linha.setAttribute("role", "button");
+        linha.setAttribute("aria-controls", "detalhe-dia");
+        linha.addEventListener("click", () => selecionarDia(previsao, i));
+        linha.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selecionarDia(previsao, i); }
+        });
         lista.appendChild(linha);
     });
 
     gsap.from(lista.querySelectorAll(".dia"), { x: 40, opacity: 0, duration: .45, stagger: .07, ease: "power4.out", delay: .35 });
     gsap.from(lista.querySelectorAll(".faixa"), { scaleX: 0, duration: .7, stagger: .07, ease: "power3.out", delay: .55 });
+    selecionarDia(previsao, 0, .7);   // "Hoje" já começa aberto
+}
+
+/* ---------- Detalhes do dia selecionado na previsão ---------- */
+const numeroBR = v => Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+// índice UV pela escala da OMS
+function nivelUV(uv) {
+    if (uv < 3) return { nome: "Baixo", classe: "uv-baixo", dica: "sem necessidade de proteção" };
+    if (uv < 6) return { nome: "Moderado", classe: "uv-moderado", dica: "use protetor solar" };
+    if (uv < 8) return { nome: "Alto", classe: "uv-alto", dica: "protetor e chapéu" };
+    if (uv < 11) return { nome: "Muito alto", classe: "uv-muito-alto", dica: "evite sol das 10h às 16h" };
+    return { nome: "Extremo", classe: "uv-extremo", dica: "evite exposição ao sol" };
+}
+
+function nivelVento(kmh) {
+    if (kmh < 20) return "fraco";
+    if (kmh < 40) return "moderado";
+    if (kmh < 62) return "forte";
+    return "muito forte";
+}
+
+// duração do dia a partir de "05:27" e "18:14"
+function horasDeLuz(nascer, por) {
+    const [h1, m1] = nascer.split(":").map(Number), [h2, m2] = por.split(":").map(Number);
+    const minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+    return Math.floor(minutos / 60) + "h" + String(minutos % 60).padStart(2, "0");
+}
+
+const ICONES_DETALHE = {
+    sol:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 4v3M4.9 9.9l2 2M19.1 9.9l-2 2"/></svg>',
+    chuva: '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.5-6 5.5-10z" fill="currentColor"/></svg>',
+    vento: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h8"/></svg>',
+    uv:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+};
+
+function selecionarDia(previsao, indice, atraso = 0) {
+    const p = previsao[indice];
+    document.querySelectorAll("#lista-previsao .dia").forEach((linha, i) => {
+        linha.classList.toggle("selecionado", i === indice);
+        linha.setAttribute("aria-pressed", i === indice);
+    });
+
+    const data = new Date(p.data + "T12:00:00");
+    const nomeDia = indice === 0 ? "Hoje" : data.toLocaleDateString("pt-BR", { weekday: "long" });
+    const dataCurta = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    const uv = p.uv_max != null ? nivelUV(p.uv_max) : null;
+
+    const itens = [
+        { icone: "sol", rotulo: "Sol",
+          valor: p.nascer_sol && p.por_sol ? p.nascer_sol + " – " + p.por_sol : "–",
+          sub: p.nascer_sol && p.por_sol ? horasDeLuz(p.nascer_sol, p.por_sol) + " de luz" : "" },
+        { icone: "chuva", rotulo: "Chuva",
+          valor: p.chuva_mm != null ? numeroBR(p.chuva_mm) + " mm" : "–",
+          sub: p.chuva_horas ? "em " + numeroBR(p.chuva_horas) + " h do dia" : "dia seco" },
+        { icone: "vento", rotulo: "Vento máx.",
+          valor: p.vento_max_kmh != null ? numeroBR(p.vento_max_kmh) + " km/h" : "–",
+          sub: p.vento_max_kmh != null ? nivelVento(p.vento_max_kmh) : "" },
+        { icone: "uv", rotulo: "Índice UV",
+          valor: p.uv_max != null ? numeroBR(p.uv_max) : "–",
+          sub: uv ? uv.dica : "", selo: uv }
+    ];
+
+    const caixa = $("#detalhe-dia");
+    caixa.replaceChildren();
+    const cab = document.createElement("div");
+    cab.className = "detalhe-cab";
+    const titulo = document.createElement("strong");
+    titulo.textContent = nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1);
+    const subtitulo = document.createElement("span");
+    subtitulo.textContent = dataCurta + " · " + (DESCRICOES[p.codigo] || "");
+    cab.append(titulo, subtitulo);
+
+    const grade = document.createElement("div");
+    grade.className = "detalhe-grade";
+    for (const item of itens) {
+        const bloco = document.createElement("div");
+        bloco.className = "detalhe-item";
+        bloco.innerHTML = '<span class="detalhe-icone ' + item.icone + '">' + ICONES_DETALHE[item.icone] + '</span>' +
+            '<div><span class="rot"></span><span class="val"></span><span class="sub"></span></div>';
+        bloco.querySelector(".rot").textContent = item.rotulo;
+        bloco.querySelector(".val").textContent = item.valor;
+        bloco.querySelector(".sub").textContent = item.sub;
+        if (item.selo) {
+            const selo = document.createElement("span");
+            selo.className = "selo-uv " + item.selo.classe;
+            selo.textContent = item.selo.nome;
+            bloco.querySelector(".val").append(" ", selo);
+        }
+        grade.appendChild(bloco);
+    }
+
+    caixa.append(cab, grade);
+    caixa.hidden = false;
+    gsap.fromTo([cab, ...grade.children], { y: 12, opacity: 0 },
+        { y: 0, opacity: 1, duration: .4, stagger: .05, ease: "power4.out", delay: atraso });
 }
 
 /* ---------- Histórico ---------- */

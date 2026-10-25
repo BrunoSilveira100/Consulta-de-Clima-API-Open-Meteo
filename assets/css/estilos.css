@@ -375,6 +375,68 @@
     font-size: 15px;
   }
   .dia:last-child { border-bottom: none; }
+
+  /* linhas clicáveis: hover suave e dia selecionado destacado */
+  .dia {
+    cursor: pointer;
+    margin: 0 -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 12px;
+    transition: background-color .2s;
+  }
+  .dia:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .dia.selecionado { background: color-mix(in srgb, var(--accent) 12%, transparent); border-bottom-color: transparent; }
+  .dia:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* ===== Detalhes do dia selecionado ===== */
+  .detalhe-dia {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    border: 1px solid var(--line);
+  }
+  .detalhe-dia[hidden] { display: none; }
+  .detalhe-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+  .detalhe-cab strong { font-family: 'Roboto', 'Segoe UI', Arial, sans-serif; font-size: 16px; }
+  .detalhe-cab span { font-size: 12px; color: var(--muted); text-align: right; }
+  .detalhe-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+  .detalhe-item { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+  .detalhe-icone {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, transparent);
+  }
+  .detalhe-icone svg { width: 16px; height: 16px; }
+  .detalhe-icone.sol { --c: #e8a317; }
+  .detalhe-icone.chuva { --c: #2f80d1; }
+  .detalhe-icone.vento { --c: #5b8fb0; }
+  .detalhe-icone.uv { --c: #e8642c; }
+  .detalhe-item .rot { display: block; font-size: 11px; color: var(--muted); }
+  .detalhe-item .val { display: block; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .detalhe-item .sub { display: block; font-size: 12px; color: var(--muted); }
+
+  /* selo do índice UV com as cores da escala da OMS */
+  .selo-uv {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    vertical-align: 2px;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 18%, transparent);
+  }
+  .uv-baixo { --c: #2e9d5b; }
+  .uv-moderado { --c: #c99a06; }
+  .uv-alto { --c: #e8752c; }
+  .uv-muito-alto { --c: #d64545; }
+  .uv-extremo { --c: #9b59b6; }
   .dia .nome { font-weight: 600; text-transform: capitalize; }
   .dia .mini svg { width: 26px; height: 26px; display: block; }
   .dia .min { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
