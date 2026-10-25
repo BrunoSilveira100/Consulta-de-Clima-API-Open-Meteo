@@ -39,8 +39,8 @@ $lon        = $geo["results"][0]["longitude"];
 
 /* 2) Consulta da previsão na Open-Meteo (atual + próximos dias) */
 $cliUrl  = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lon}"
-         . "&current=temperature_2m,wind_speed_10m,weather_code,is_day,relative_humidity_2m,apparent_temperature"
-         . "&daily=temperature_2m_max,temperature_2m_min,weather_code"
+         . "&current=temperature_2m,wind_speed_10m,weather_code,is_day,relative_humidity_2m,apparent_temperature,precipitation_probability"
+         . "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max"
          . "&forecast_days=5&timezone=auto";
 $cliJson = @file_get_contents($cliUrl);
 
@@ -63,6 +63,7 @@ for ($i = 0; $i < 5; $i++) {
         "temp_max" => $clima["daily"]["temperature_2m_max"][$i],
         "temp_min" => $clima["daily"]["temperature_2m_min"][$i],
         "codigo"   => $clima["daily"]["weather_code"][$i],
+        "chuva_pct" => $clima["daily"]["precipitation_probability_max"][$i] ?? null,   // maior chance do dia
     ];
 }
 
@@ -78,6 +79,7 @@ echo json_encode([
         "dia"           => (bool)$clima["current"]["is_day"],
         "umidade"       => (int)$clima["current"]["relative_humidity_2m"],
         "sensacao_c"    => (float)$clima["current"]["apparent_temperature"],
+        "chuva_pct"     => $clima["current"]["precipitation_probability"] ?? null,   // chance de chuva agora
     ],
     "previsao"  => $previsao,
 ]);

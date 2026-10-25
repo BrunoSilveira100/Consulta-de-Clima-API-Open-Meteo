@@ -336,6 +336,7 @@ function montar(palco, dados, g, dia) {
 
     palco.querySelector(".descricao .txt").textContent = DESCRICOES[c.codigo_clima] || "Condição desconhecida";
     palco.querySelector(".descricao .cod").textContent = "WMO " + c.codigo_clima;
+    palco.querySelector('[data-m="chuva"]').textContent = c.chuva_pct != null ? c.chuva_pct + "%" : "–";
     palco.querySelector('[data-m="vento"]').textContent = c.vento_kmh + " km/h";
     palco.querySelector('[data-m="umidade"]').textContent = c.umidade != null ? c.umidade + "%" : "–";
     palco.querySelector('[data-m="sensacao"]').textContent =
@@ -359,10 +360,16 @@ function renderizarPrevisao(previsao) {
 
         linha.innerHTML =
             '<span class="nome"></span><span class="mini"></span>' +
+            '<span class="chuva" title="Chance de chuva"><svg viewBox="0 0 24 24"><path d="M12 3.5c3 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.5-6 5.5-10z" fill="currentColor"/></svg><span></span></span>' +
             '<span class="min"></span><div class="trilho"><div class="faixa"></div></div><span class="max"></span>';
         linha.querySelector(".nome").textContent = nome;
         linha.querySelector(".mini").innerHTML = icone(grupo(p.codigo), true);
         linha.querySelector(".mini").title = DESCRICOES[p.codigo] || "";
+
+        // chance de chuva do dia: destacada a partir de 50%
+        const chuva = linha.querySelector(".chuva");
+        chuva.querySelector("span").textContent = p.chuva_pct != null ? p.chuva_pct + "%" : "–";
+        chuva.classList.toggle("alta", p.chuva_pct >= 50);
         linha.querySelector(".min").textContent = Math.round(p.temp_min) + "°";
         linha.querySelector(".max").textContent = Math.round(p.temp_max) + "°";
 

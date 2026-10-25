@@ -318,7 +318,7 @@
 
   .metricas {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     margin-top: 28px;
     border-top: 1px solid currentColor;
     border-color: color-mix(in srgb, var(--ink) 25%, transparent);
@@ -358,7 +358,7 @@
   }
   .dia {
     display: grid;
-    grid-template-columns: 64px 28px 34px 1fr 34px;
+    grid-template-columns: 54px 28px 50px 30px 1fr 32px;
     align-items: center;
     gap: 10px;
     padding: 13px 0;
@@ -369,6 +369,20 @@
   .dia .nome { font-weight: 600; text-transform: capitalize; }
   .dia .mini svg { width: 26px; height: 26px; display: block; }
   .dia .min { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  /* chance de chuva do dia: gota + porcentagem, azul quando >= 50% */
+  .dia .chuva {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    opacity: .7;
+  }
+  .dia .chuva svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .dia .chuva.alta { color: #2f80d1; opacity: 1; }
+  :root[data-tema="escuro"] .dia .chuva.alta { color: #6db3f2; }
   .dia .max { font-weight: 600; font-variant-numeric: tabular-nums; }
   .trilho { position: relative; height: 6px; border-radius: 6px; background: var(--track); }
   .faixa {
@@ -489,7 +503,7 @@
     header .info { display: none; }
     .grid { grid-template-columns: 1fr; }
     .metricas { grid-template-columns: repeat(2, 1fr); }
-    .metrica:nth-child(3) { padding-left: 0; border-left: none; }
+    .metrica:nth-child(odd) { padding-left: 0; border-left: none; }
     #palco { padding: 24px; }
     .busca kbd { display: none; }
     .busca .limpar span { display: none; }

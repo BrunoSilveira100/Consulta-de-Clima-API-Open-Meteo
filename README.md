@@ -87,10 +87,11 @@ flowchart LR
     "codigo_clima": 2,
     "dia": true,
     "umidade": 74,
-    "sensacao_c": 33.1
+    "sensacao_c": 33.1,
+    "chuva_pct": 15
   },
   "previsao": [
-    { "data": "2026-10-04", "temp_max": 32.1, "temp_min": 24.5, "codigo": 2 }
+    { "data": "2026-10-04", "temp_max": 32.1, "temp_min": 24.5, "codigo": 2, "chuva_pct": 40 }
   ]
 }
 ```
