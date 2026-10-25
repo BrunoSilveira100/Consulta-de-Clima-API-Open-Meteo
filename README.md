@@ -135,7 +135,7 @@ Cada dia da previsão é clicável (mouse, toque ou teclado com Enter ou espaço
 
 ### Previsão hora a hora
 
-Abaixo dos detalhes, uma faixa com **rolagem horizontal** mostra o dia selecionado hora a hora: horário, ícone (lua à noite), temperatura com uma curva ligando os pontos, chance de chuva e barras com os milímetros de chuva de cada hora. No dia de hoje, a faixa começa em **"Agora"**, a hora atual da cidade (`clima.hora_local`). Nos outros dias, mostra as 24 horas.
+Numa seção própria, **"Hora a hora"**, entre a previsão e as notícias e com a largura toda da página, uma faixa com **rolagem horizontal** mostra o dia selecionado hora a hora: horário, ícone (lua à noite), temperatura com uma curva ligando os pontos, chance de chuva e barras com os milímetros de chuva de cada hora. No dia de hoje, a faixa começa em **"Agora"**, a hora atual da cidade (`clima.hora_local`). Nos outros dias, mostra as 24 horas.
 
 Acima da faixa, um aviso resume a janela de chuva: "Leve guarda-chuva: chuva mais provável das 17h às 23h". Contam as horas com chance ≥ 50% ou ≥ 0,5 mm. Para rolar, funcionam o toque (celular), a roda do mouse, arrastar com o mouse e as setas do teclado. Um esmaecido na borda direita indica que há mais horários.
 

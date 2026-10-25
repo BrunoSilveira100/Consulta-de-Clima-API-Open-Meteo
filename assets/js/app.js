@@ -359,6 +359,7 @@ function limpar() {
     const placeholder = () => {
         $("#lista-previsao").innerHTML = '<p class="placeholder">Sem dados ainda.</p>';
         $("#detalhe-dia").hidden = true;
+        $("#secao-horas").hidden = true;
     };
     if (dias.length)
         gsap.to(dias, { x: -30, opacity: 0, duration: .25, stagger: .04, ease: "power4.in", onComplete: placeholder });
@@ -535,24 +536,31 @@ function selecionarDia(previsao, indice, atraso = 0) {
 
     caixa.append(cab, grade);
 
+    caixa.hidden = false;
+    gsap.fromTo([cab, ...grade.children], { y: 12, opacity: 0 },
+        { y: 0, opacity: 1, duration: .4, stagger: .05, ease: "power4.out", delay: atraso });
+
+    // a faixa hora a hora fica numa seção própria, com a largura toda da página
     // hoje: só das horas que ainda vão acontecer (no fuso da cidade)
     const horas = (p.horas || []).filter(h =>
         indice !== 0 || !horaLocalCidade || h.hora.slice(0, 2) >= horaLocalCidade.slice(0, 2));
-    const extras = [];
-    if (horas.length) {
-        const secao = montarHoraAHora(horas, indice === 0);
-        caixa.appendChild(secao);
-        extras.push(secao);
+    const secaoHoras = $("#secao-horas");
+    const conteudo = $("#conteudo-horas");
+    if (!horas.length) {
+        secaoHoras.hidden = true;
+        return;
     }
-
-    caixa.hidden = false;
-    gsap.fromTo([cab, ...grade.children, ...extras], { y: 12, opacity: 0 },
-        { y: 0, opacity: 1, duration: .4, stagger: .05, ease: "power4.out", delay: atraso });
+    $("#titulo-horas").textContent = "Hora a hora · " + titulo.textContent;
+    const faixa = montarHoraAHora(horas, indice === 0);
+    conteudo.replaceChildren(faixa);
+    secaoHoras.hidden = false;
+    gsap.fromTo(faixa, { x: 30, opacity: 0 },
+        { x: 0, opacity: 1, duration: .5, ease: "power4.out", delay: atraso + .1 });
 }
 
 /* ---------- Faixa hora a hora (rolagem horizontal) ---------- */
 let horaLocalCidade = null;
-const LARGURA_HORA = 54;   // px por coluna
+const LARGURA_HORA = 58;   // px por coluna
 
 function montarHoraAHora(horas, ehHoje) {
     const secao = document.createElement("div");
