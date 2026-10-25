@@ -2,25 +2,25 @@
 /* Ranking das cidades mais pesquisadas por todos os visitantes.
    Guarda só o nome da cidade e um contador, sem nenhum dado de quem pesquisou.
 
-   Armazenamento:
-   - Vercel: Redis da Upstash (variáveis criadas pela integração no painel da Vercel).
-     As funções da Vercel não têm disco permanente, então arquivo não serve lá.
-   - XAMPP / php -S: arquivo data/ranking.json no próprio projeto.
+   Armazenamento (escolhido automaticamente pelas variáveis de ambiente):
+   1. Upstash REST  — UPSTASH_REDIS_REST_URL/TOKEN ou KV_REST_API_URL/TOKEN
+   2. Redis por TCP — REDIS_URL (redis:// ou rediss://), ex.: Redis Cloud da Vercel
+   3. Arquivo local — data/ranking.json (XAMPP / php -S)
+   As funções da Vercel não têm disco permanente, então lá só valem as opções 1 e 2.
 
    Qualquer falha aqui é ignorada: o ranking nunca pode derrubar a consulta do clima. */
 
 const RANKING_CHAVE = "clima:ranking";
 
-/* URL e token do Redis, se a integração estiver ativa (aceita os dois padrões de nome) */
-function rankingRedis(): ?array {
+/* ---------- 1. Upstash: API REST ---------- */
+function rankingUpstash(): ?array {
     $url   = getenv("UPSTASH_REDIS_REST_URL") ?: getenv("KV_REST_API_URL");
     $token = getenv("UPSTASH_REDIS_REST_TOKEN") ?: getenv("KV_REST_API_TOKEN");
     return $url && $token ? [rtrim($url, "/"), $token] : null;
 }
 
-/* Executa um comando no Redis pela API REST da Upstash */
-function redisComando(array $comando) {
-    [$url, $token] = rankingRedis();
+function upstashComando(array $comando) {
+    [$url, $token] = rankingUpstash();
     $contexto = stream_context_create(["http" => [
         "method"        => "POST",
         "header"        => "Authorization: Bearer $token\r\nContent-Type: application/json\r\n",
@@ -33,15 +33,109 @@ function redisComando(array $comando) {
     return $json["result"] ?? null;
 }
 
+/* ---------- 2. Redis por TCP: protocolo nativo (RESP) ---------- */
+function redisTcpComando(array $comando) {
+    static $conexao = null;   // reaproveita a conexão dentro da mesma requisição
+
+    if ($conexao === null) {
+        $partes = parse_url(getenv("REDIS_URL"));
+        $tls    = ($partes["scheme"] ?? "") === "rediss";
+        $alvo   = ($tls ? "tls://" : "tcp://") . $partes["host"] . ":" . ($partes["port"] ?? 6379);
+
+        $conexao = @stream_socket_client($alvo, $errno, $erro, 2);
+        if (!$conexao) {
+            $conexao = false;
+            return null;
+        }
+        stream_set_timeout($conexao, 2);
+
+        if (isset($partes["pass"])) {
+            $usuario = $partes["user"] ?? "";
+            $auth = $usuario !== ""
+                ? ["AUTH", urldecode($usuario), urldecode($partes["pass"])]
+                : ["AUTH", urldecode($partes["pass"])];
+            redisEnviar($conexao, $auth);
+        }
+    }
+
+    return $conexao ? redisEnviar($conexao, $comando) : null;
+}
+
+/* Envia um comando no formato RESP: *<n>\r\n$<tamanho>\r\n<argumento>\r\n... */
+function redisEnviar($conexao, array $comando) {
+    $mensagem = "*" . count($comando) . "\r\n";
+    foreach ($comando as $argumento) {
+        $argumento = (string)$argumento;
+        $mensagem .= "$" . strlen($argumento) . "\r\n" . $argumento . "\r\n";
+    }
+    fwrite($conexao, $mensagem);
+    return redisLer($conexao);
+}
+
+/* Lê uma resposta RESP: + texto, - erro, : inteiro, $ string, * lista */
+function redisLer($conexao) {
+    $linha = fgets($conexao);
+    if ($linha === false) {
+        return null;
+    }
+    $tipo  = $linha[0];
+    $valor = substr($linha, 1, -2);
+
+    switch ($tipo) {
+        case "+":
+            return $valor;
+        case "-":
+            throw new RuntimeException("Redis: " . $valor);
+        case ":":
+            return (int)$valor;
+        case "$":
+            if ($valor === "-1") {
+                return null;
+            }
+            $tamanho = (int)$valor;
+            $dado = "";
+            while (strlen($dado) < $tamanho + 2) {   // + \r\n final
+                $parte = fread($conexao, $tamanho + 2 - strlen($dado));
+                if ($parte === false || $parte === "") {
+                    return null;
+                }
+                $dado .= $parte;
+            }
+            return substr($dado, 0, $tamanho);
+        case "*":
+            if ($valor === "-1") {
+                return null;
+            }
+            $itens = [];
+            for ($i = 0, $n = (int)$valor; $i < $n; $i++) {
+                $itens[] = redisLer($conexao);
+            }
+            return $itens;
+    }
+    return null;
+}
+
+/* ---------- Escolha do armazenamento ---------- */
+function redisDisponivel(): bool {
+    return rankingUpstash() !== null || (bool)getenv("REDIS_URL");
+}
+
+function redis(array $comando) {
+    return rankingUpstash() ? upstashComando($comando) : redisTcpComando($comando);
+}
+
+/* ---------- 3. Arquivo local ---------- */
 function arquivoRanking(): string {
     return __DIR__ . "/../data/ranking.json";
 }
 
+/* ---------- API do ranking ---------- */
+
 /* Soma +1 para a cidade */
 function rankingRegistrar(string $cidade): void {
     try {
-        if (rankingRedis()) {
-            redisComando(["ZINCRBY", RANKING_CHAVE, "1", $cidade]);
+        if (redisDisponivel()) {
+            redis(["ZINCRBY", RANKING_CHAVE, "1", $cidade]);
             return;
         }
         if (getenv("VERCEL")) {
@@ -70,8 +164,8 @@ function rankingRegistrar(string $cidade): void {
 /* As N cidades mais pesquisadas: [["cidade" => "Recife", "total" => 12], ...] */
 function rankingTop(int $n = 5): array {
     try {
-        if (rankingRedis()) {
-            $r = redisComando(["ZREVRANGE", RANKING_CHAVE, "0", (string)($n - 1), "WITHSCORES"]) ?? [];
+        if (redisDisponivel()) {
+            $r = redis(["ZREVRANGE", RANKING_CHAVE, "0", (string)($n - 1), "WITHSCORES"]) ?? [];
             $top = [];
             for ($i = 0; $i + 1 < count($r); $i += 2) {
                 $top[] = ["cidade" => $r[$i], "total" => (int)$r[$i + 1]];

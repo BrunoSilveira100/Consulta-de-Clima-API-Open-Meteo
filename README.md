@@ -183,7 +183,7 @@ Os botões da tela inicial mostram as **5 cidades mais pesquisadas por todos os 
 
 - **Onde conta:** no servidor (`api/clima.php`), e só quando a cidade é encontrada. Pesquisas inválidas não entram no ranking.
 - **Qualidade do dado:** a contagem usa o nome oficial devolvido pela geocodificação, então "guaxupe", "GUAXUPE" e "Guaxupé" somam na mesma cidade.
-- **Armazenamento:** na Vercel, um *sorted set* no Redis da Upstash (`ZINCRBY` para somar, `ZREVRANGE` para o top 5). No XAMPP, o arquivo `data/ranking.json`, com trava (`flock`) para gravações simultâneas não perderem contagens.
+- **Armazenamento:** na Vercel, um *sorted set* no Redis (`ZINCRBY` para somar, `ZREVRANGE` para o top 5). O código aceita a variável `REDIS_URL` (conexão TCP pelo protocolo nativo do Redis, com senha e TLS opcional) ou a API REST da Upstash. No XAMPP, usa o arquivo `data/ranking.json`, com trava (`flock`) para gravações simultâneas não perderem contagens.
 - **Privacidade:** só o nome da cidade e um contador. Nenhum dado de quem pesquisou.
 - **Resiliência:** se o ranking falhar, a consulta do clima continua funcionando e os botões voltam às sugestões padrão.
 
