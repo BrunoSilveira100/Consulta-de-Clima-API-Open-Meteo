@@ -15,13 +15,6 @@
   <a href="#diagrama-do-fluxo">Diagrama do fluxo</a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/imagens/site-escuro.png">
-    <img src="docs/imagens/site-claro.png" width="860" alt="Tela da aplicação com a consulta de Recife: 28 °C, previsão de 5 dias e notícias de meteorologia">
-  </picture>
-</p>
-
 ---
 
 ## Sobre o trabalho
@@ -189,9 +182,7 @@ Consulta-de-Clima-API-Open-Meteo/
 │   ├── _ranking.php        # contagem do ranking (Redis ou arquivo local)
 │   └── _local.exemplo.php  # modelo do arquivo de chave local
 ├── docs/
-│   ├── postman/            # coleção do Postman (.json)
-│   ├── identidade-visual/  # estudos de logo
-│   └── imagens/            # prints deste README
+│   └── postman/            # coleção do Postman (.json)
 └── vercel.json             # publicação na Vercel
 ```
 
