@@ -377,17 +377,32 @@
   }
   .dia:last-child { border-bottom: none; }
 
-  /* linhas clicáveis: hover suave e dia selecionado destacado */
+  /* cards clicáveis: sobem no hover e ficam destacados ao clicar.
+     O fundo é uma camada (::before) que só anima opacidade. */
   .dia {
+    position: relative;
+    isolation: isolate;
     cursor: pointer;
     margin: 0 -10px;
     padding-left: 10px;
     padding-right: 10px;
     border-radius: 12px;
-    transition: background-color .2s;
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1);
   }
-  .dia:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
-  .dia.selecionado { background: color-mix(in srgb, var(--accent) 12%, transparent); border-bottom-color: transparent; }
+  .dia::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .dia:hover { transform: translateY(-2px); }
+  .dia:hover::before { opacity: 1; }
+  .dia.selecionado { border-bottom-color: transparent; }
+  .dia.selecionado::before { background: color-mix(in srgb, var(--accent) 14%, transparent); opacity: 1; }
   .dia:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
   /* ===== Detalhes do dia selecionado ===== */
@@ -423,10 +438,8 @@
   .detalhe-item .sub { display: block; font-size: 12px; color: var(--muted); }
 
   /* ===== Seção "Hora a hora" (entre a previsão e as notícias) ===== */
-  .secao-horas { margin-top: 36px; }
+  .secao-horas { margin-top: 20px; }   /* sem título: fica mais perto da previsão */
   .secao-horas[hidden] { display: none; }
-  .secao-horas .cab { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; }
-  .secao-horas .dica { font-size: 13px; color: var(--muted); }
   .painel-horas { padding: 20px 24px; border-radius: 24px; }
 
   /* ===== Faixa hora a hora (rolagem horizontal) ===== */
@@ -452,13 +465,50 @@
   .horas-rolagem:focus-visible { box-shadow: 0 0 0 2px var(--accent); border-radius: 10px; }
   .horas-rolagem::-webkit-scrollbar { height: 6px; }
   .horas-rolagem::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
-  .horas-grade { display: grid; row-gap: 4px; justify-items: center; align-items: end; width: max-content; }
-  .h-hora { font-size: 11px; color: var(--muted); }
+  /* uma coluna por hora (para subir no hover e ser destacada ao clicar), no visual original.
+     Alturas fixas: hora 16 + ícone 24 + temperatura 18; a linha de temperatura passa no espaço
+     seguinte (topo = 6 + 16 + 4 + 24 + 4 + 18 + 4 = 76 px) */
+  .horas-trilho { position: relative; display: flex; }
+  .h-col {
+    position: relative;
+    isolation: isolate;
+    flex: 0 0 58px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0 4px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1);
+  }
+  .h-col::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .h-col:hover { transform: translateY(-4px); }
+  .h-col:hover::before { opacity: 1; }
+  .h-col.selecionada::before {
+    background: color-mix(in srgb, #3b8fe0 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #3b8fe0 45%, transparent);
+    opacity: 1;
+  }
+  .h-hora { height: 16px; line-height: 16px; font-size: 11px; color: var(--muted); }
   .h-hora.agora { color: var(--text); font-weight: 700; }
-  .h-icone svg { width: 24px; height: 24px; display: block; }
-  .h-temp { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .h-curva { grid-column: 1 / -1; justify-self: start; line-height: 0; color: var(--accent); }
-  .h-curva circle { fill: var(--surface); stroke: currentColor; stroke-width: 2; }
+  .h-icone { height: 24px; }
+  .h-icone svg { width: 24px; height: 24px; display: block; overflow: visible; }
+  .h-temp { height: 18px; line-height: 18px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .h-espaco { height: 34px; }
+  .h-curva { position: absolute; left: 0; top: 76px; z-index: 1; pointer-events: none; line-height: 0; }
+  .h-curva svg { display: block; overflow: visible; }
+  .c-linha { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .c-ponto { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
   .h-barra { height: 52px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
   .h-barra i { display: block; width: 22px; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, #2f80d1 60%, transparent); }
   .h-barra span { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -484,7 +534,7 @@
   .dia .mini svg { width: 26px; height: 26px; display: block; }
   .dia .min { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
   /* chance de chuva do dia: gota + porcentagem, azul quando >= 50% */
-  .dia .chuva, td .chuva, .horas-grade .chuva {
+  .dia .chuva, td .chuva, .h-col .chuva {
     display: inline-flex;
     align-items: center;
     gap: 3px;
@@ -494,11 +544,11 @@
     color: var(--muted);
     opacity: .7;
   }
-  .dia .chuva svg, td .chuva svg, .horas-grade .chuva svg { width: 12px; height: 12px; flex-shrink: 0; }
-  .dia .chuva.alta, td .chuva.alta, .horas-grade .chuva.alta { color: #2f80d1; opacity: 1; }
+  .dia .chuva svg, td .chuva svg, .h-col .chuva svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .dia .chuva.alta, td .chuva.alta, .h-col .chuva.alta { color: #2f80d1; opacity: 1; }
   :root[data-tema="escuro"] .dia .chuva.alta, :root[data-tema="escuro"] td .chuva.alta,
-  :root[data-tema="escuro"] .horas-grade .chuva.alta { color: #6db3f2; }
-  .horas-grade .chuva { font-size: 11px; gap: 2px; }
+  :root[data-tema="escuro"] .h-col .chuva.alta { color: #6db3f2; }
+  .h-col .chuva { font-size: 11px; gap: 2px; }
   td .chuva { font-size: 14px; }
   .dia .max { font-weight: 600; font-variant-numeric: tabular-nums; }
   .trilho { position: relative; height: 6px; border-radius: 6px; background: var(--track); }
@@ -626,4 +676,38 @@
     .busca .limpar span { display: none; }
     .busca .limpar { padding: 10.5px 12px; }
     .icone { width: 68px; height: 68px; }
+  }
+
+  /* ===== Ícones animados (Hora a hora e Próximos dias) =====
+     Os ícones continuam os mesmos; só ganham movimento: sol girando devagar,
+     nuvem balançando, chuva/neve caindo, raio piscando e névoa deslizando.
+     No Hora a hora, cada coluna tem um atraso (--atraso) para não balançarem em bloco. */
+  .h-icone .raios, .dia .mini .raios,
+  .h-icone .nuvem, .dia .mini .nuvem,
+  .h-icone .gota, .dia .mini .gota,
+  .h-icone .raio, .dia .mini .raio,
+  .h-icone .linha, .dia .mini .linha { transform-box: fill-box; transform-origin: center; }
+  .h-icone .raios, .dia .mini .raios { animation: ico-girar 16s linear infinite; }
+  .h-icone .nuvem, .dia .mini .nuvem { animation: ico-balancar 4s ease-in-out infinite; }
+  .h-icone .raio, .dia .mini .raio { animation: ico-piscar 2.6s linear infinite; }
+  .h-icone .linha, .dia .mini .linha { animation: ico-balancar 5s ease-in-out infinite; }
+  .h-icone .gota, .dia .mini .gota { animation: ico-cair 1.2s ease-in infinite; }
+  .h-icone .gota:nth-of-type(2), .dia .mini .gota:nth-of-type(2) { animation-delay: .4s; }
+  .h-icone .gota:nth-of-type(3), .dia .mini .gota:nth-of-type(3) { animation-delay: .8s; }
+  .h-col .nuvem, .h-col .raios, .h-col .raio, .h-col .linha { animation-delay: var(--atraso, 0s); }
+
+  @keyframes ico-girar { to { transform: rotate(360deg); } }
+  @keyframes ico-balancar { 0%, 100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+  @keyframes ico-piscar { 0%, 70%, 80%, 100% { opacity: 1; } 74% { opacity: .15; } 84% { opacity: .25; } }
+  @keyframes ico-cair {
+    0% { transform: translateY(-4px); opacity: 0; }
+    25%, 70% { opacity: 1; }
+    100% { transform: translateY(6px); opacity: 0; }
+  }
+
+  /* movimento reduzido: ícones parados e sem elevação no hover (tudo continua visível) */
+  @media (prefers-reduced-motion: reduce) {
+    .h-icone *, .dia .mini * { animation: none !important; }
+    .dia, .h-col { transition: none; }
+    .dia:hover, .h-col:hover { transform: none; }
   }

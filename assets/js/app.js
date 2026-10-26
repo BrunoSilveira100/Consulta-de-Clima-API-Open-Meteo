@@ -414,6 +414,7 @@ function renderizarPrevisao(previsao) {
             '<span class="min"></span><div class="trilho"><div class="faixa"></div></div><span class="max"></span>';
         linha.querySelector(".nome").textContent = nome;
         linha.querySelector(".mini").innerHTML = icone(grupo(p.codigo), true);
+        linha.querySelector(".mini").style.color = corTemp(p.temp_max);
         linha.querySelector(".mini").title = DESCRICOES[p.codigo] || "";
 
         // chance de chuva do dia: destacada a partir de 50%
@@ -427,7 +428,6 @@ function renderizarPrevisao(previsao) {
         faixa.style.left = escala(p.temp_min) + "%";
         faixa.style.width = Math.max(4, escala(p.temp_max) - escala(p.temp_min)) + "%";
         faixa.style.background = `linear-gradient(90deg, ${corTemp(p.temp_min)}, ${corTemp(p.temp_max)})`;
-        linha.querySelector(".mini").style.color = corTemp(p.temp_max);
 
         // a linha vira um botão: clique, Enter ou espaço mostram os detalhes do dia
         linha.tabIndex = 0;
@@ -440,7 +440,8 @@ function renderizarPrevisao(previsao) {
         lista.appendChild(linha);
     });
 
-    gsap.from(lista.querySelectorAll(".dia"), { x: 40, opacity: 0, duration: .45, stagger: .07, ease: "power4.out", delay: .35 });
+    // cards entrando em cascata (clearProps devolve o transform ao CSS, para o hover funcionar)
+    gsap.from(lista.querySelectorAll(".dia"), { y: 18, opacity: 0, duration: .45, stagger: .07, ease: "power3.out", delay: .35, clearProps: "transform,opacity" });
     gsap.from(lista.querySelectorAll(".faixa"), { scaleX: 0, duration: .7, stagger: .07, ease: "power3.out", delay: .55 });
     selecionarDia(previsao, 0, .7);   // "Hoje" já começa aberto
 }
@@ -483,6 +484,8 @@ function selecionarDia(previsao, indice, atraso = 0) {
     document.querySelectorAll("#lista-previsao .dia").forEach((linha, i) => {
         linha.classList.toggle("selecionado", i === indice);
         linha.setAttribute("aria-pressed", i === indice);
+        // destaque ao clicar: um pulso rápido no card escolhido (não no carregamento inicial)
+        if (i === indice && atraso === 0) gsap.fromTo(linha, { scale: .97 }, { scale: 1, duration: .35, ease: "back.out(2.5)", clearProps: "transform" });
     });
 
     const data = new Date(p.data + "T12:00:00");
@@ -550,17 +553,18 @@ function selecionarDia(previsao, indice, atraso = 0) {
         secaoHoras.hidden = true;
         return;
     }
-    $("#titulo-horas").textContent = "Hora a hora · " + titulo.textContent;
+    // sem título visível: o dia exibido fica no aria-label, para leitores de tela
+    secaoHoras.setAttribute("aria-label", "Previsão hora a hora · " + titulo.textContent);
     const faixa = montarHoraAHora(horas, indice === 0);
     conteudo.replaceChildren(faixa);
     secaoHoras.hidden = false;
-    gsap.fromTo(faixa, { x: 30, opacity: 0 },
-        { x: 0, opacity: 1, duration: .5, ease: "power4.out", delay: atraso + .1 });
+    faixa.animar(atraso);   // re-anima com os dados do dia escolhido
 }
 
 /* ---------- Faixa hora a hora (rolagem horizontal) ---------- */
 let horaLocalCidade = null;
-const LARGURA_HORA = 58;   // px por coluna
+const LARGURA_HORA = 58;    // px por coluna
+const ALTURA_CURVA = 34;    // px da linha de temperatura
 
 function montarHoraAHora(horas, ehHoje) {
     const secao = document.createElement("div");
@@ -574,81 +578,125 @@ function montarHoraAHora(horas, ehHoje) {
     aviso.textContent = chuvosas.length
         ? "Leve guarda-chuva: chuva mais provável das " + horaH(chuvosas[0]) + " às " + horaH(chuvosas[chuvosas.length - 1])
         : "Sem chuva significativa prevista " + (ehHoje ? "até o fim do dia" : "neste dia");
-    secao.appendChild(aviso);
 
     const rolagem = document.createElement("div");
     rolagem.className = "horas-rolagem";
     rolagem.tabIndex = 0;
     rolagem.setAttribute("aria-label", "Previsão hora a hora. Role para o lado para ver mais horários.");
 
-    const grade = document.createElement("div");
-    grade.className = "horas-grade";
-    grade.style.gridTemplateColumns = `repeat(${horas.length}, ${LARGURA_HORA}px)`;
-    const celula = (classe, texto) => {
-        const el = document.createElement("div");
-        el.className = classe;
-        if (texto != null) el.textContent = texto;
-        grade.appendChild(el);
-        return el;
-    };
+    const trilho = document.createElement("div");
+    trilho.className = "horas-trilho";
+    trilho.style.width = horas.length * LARGURA_HORA + "px";
 
-    // linha 1: horário
-    horas.forEach((h, i) => celula("h-hora" + (ehHoje && i === 0 ? " agora" : ""),
-        ehHoje && i === 0 ? "Agora" : Number(h.hora.slice(0, 2)) + "h"));
+    // a linha de temperatura fica numa camada por cima das colunas, na faixa reservada para ela
+    const camada = document.createElement("div");
+    camada.className = "h-curva";
 
-    // linha 2: ícone do tempo (lua quando é noite)
-    horas.forEach(h => {
-        const el = celula("h-icone");
-        el.innerHTML = icone(grupo(h.codigo), h.dia);
-        el.style.color = corTemp(h.temp);
-        el.title = DESCRICOES[h.codigo] || "";
-    });
+    const escalaMm = Math.max(2, ...horas.map(h => h.chuva_mm || 0));   // garoa não parece temporal
+    const colunas = horas.map((h, i) => {
+        const col = document.createElement("div");
+        col.className = "h-col" + (i === 0 ? " selecionada" : "");
+        col.style.setProperty("--atraso", (-i * .37).toFixed(2) + "s");   // ícones fora de sincronia
 
-    // linha 3: temperatura
-    horas.forEach(h => celula("h-temp", h.temp != null ? Math.round(h.temp) + "°" : "–"));
+        const hora = document.createElement("span");
+        hora.className = "h-hora" + (ehHoje && i === 0 ? " agora" : "");
+        hora.textContent = ehHoje && i === 0 ? "Agora" : Number(h.hora.slice(0, 2)) + "h";
 
-    // linha 4: curva da temperatura ligando os pontos (ocupa a largura toda)
-    const temps = horas.map(h => h.temp ?? 0);
-    const tMin = Math.min(...temps), tMax = Math.max(...temps);
-    const largura = horas.length * LARGURA_HORA, altura = 34;
-    const pontos = temps.map((t, i) => [i * LARGURA_HORA + LARGURA_HORA / 2,
-        5 + (1 - (t - tMin) / (tMax - tMin || 1)) * (altura - 10)]);
-    const curva = celula("h-curva");
-    curva.innerHTML = `<svg width="${largura}" height="${altura}" viewBox="0 0 ${largura} ${altura}">` +
-        `<polyline points="${pontos.map(p => p.join(",")).join(" ")}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
-        pontos.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3"/>`).join("") + `</svg>`;
+        const ico = document.createElement("span");
+        ico.className = "h-icone";
+        ico.innerHTML = icone(grupo(h.codigo), h.dia);
+        ico.style.color = corTemp(h.temp);
+        ico.title = DESCRICOES[h.codigo] || "";
 
-    // linha 5: chance de chuva
-    horas.forEach(h => {
-        const el = celula("chuva" + (h.chuva_pct >= 50 ? " alta" : ""));
-        el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.5-6 5.5-10z" fill="currentColor"/></svg>';
-        el.append(h.chuva_pct != null ? h.chuva_pct + "%" : "–");
-    });
+        const temp = document.createElement("span");
+        temp.className = "h-temp";
+        temp.textContent = h.temp != null ? Math.round(h.temp) + "°" : "–";
 
-    // linha 6: milímetros de chuva por hora (escala mínima de 2 mm para garoa não parecer temporal)
-    const escalaMm = Math.max(2, ...horas.map(h => h.chuva_mm || 0));
-    horas.forEach(h => {
-        const el = celula("h-barra");
-        const barra = document.createElement("i");
+        const espaco = document.createElement("span");   // a linha de temperatura passa por aqui
+        espaco.className = "h-espaco";
+
+        const chuva = document.createElement("span");
+        chuva.className = "chuva" + (h.chuva_pct >= 50 ? " alta" : "");
+        chuva.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.5-6 5.5-10z" fill="currentColor"/></svg>';
+        const pct = document.createElement("b");
+        pct.textContent = h.chuva_pct != null ? h.chuva_pct + "%" : "–";
+        chuva.appendChild(pct);
+
+        const barra = document.createElement("span");
+        barra.className = "h-barra";
+        const coluna = document.createElement("i");
         const mm = h.chuva_mm || 0;
-        barra.style.height = (mm > 0 ? Math.max(3, (mm / escalaMm) * 34) : 0) + "px";
+        coluna.style.height = (mm > 0 ? Math.max(3, (mm / escalaMm) * 34) : 0) + "px";
         const valor = document.createElement("span");
         valor.textContent = numeroBR(mm);
-        el.append(barra, valor);
+        barra.append(coluna, valor);
+
+        col.append(hora, ico, temp, espaco, chuva, barra);
+        return col;
     });
 
-    rolagem.appendChild(grade);
-    secao.appendChild(rolagem);
+    trilho.append(camada, ...colunas);
+    rolagem.appendChild(trilho);
 
     const legenda = document.createElement("p");
     legenda.className = "legenda-horas";
     legenda.textContent = "Barras: milímetros de chuva por hora · role para o lado";
-    secao.appendChild(legenda);
+
+    secao.append(aviso, rolagem, legenda);
+
+    // clique numa coluna: destaque azul
+    trilho.addEventListener("click", e => {
+        const col = e.target.closest(".h-col");
+        if (!col || rolagem.dataset.arrastou === "1") return;
+        colunas.forEach(c => c.classList.toggle("selecionada", c === col));
+    });
 
     ativarRolagemHorizontal(rolagem);
+
+    // animação de entrada (chamada depois que a faixa está na página, para medir a linha)
+    secao.animar = (atraso = 0) => {
+        gsap.from(aviso, { x: -24, opacity: 0, duration: .5, ease: "power3.out", delay: atraso });
+        gsap.from(colunas, { y: 18, opacity: 0, duration: .45, stagger: .035, ease: "power3.out",
+            delay: atraso + .1, clearProps: "transform,opacity" });
+        // % de chuva contando até o valor
+        colunas.forEach((col, i) => {
+            const alvo = horas[i].chuva_pct;
+            if (alvo == null) return;
+            const b = col.querySelector(".chuva b"), cont = { v: 0 };
+            gsap.to(cont, { v: alvo, duration: .8, ease: "power2.out", delay: atraso + .2 + i * .035,
+                onUpdate: () => { b.textContent = Math.round(cont.v) + "%"; } });
+        });
+        // barras de mm crescendo de baixo para cima
+        gsap.from(colunas.map(c => c.querySelector(".h-barra i")), { scaleY: 0, transformOrigin: "50% 100%",
+            duration: .6, stagger: .035, ease: "power3.out", delay: atraso + .3 });
+        desenharCurva(camada, horas, atraso + .15);
+    };
     return secao;
 }
 
+/* Linha de temperatura: desenhada da esquerda para a direita e pontos surgindo
+   um a um. Só anima stroke-dashoffset e transform; sem animação, aparece completa. */
+function desenharCurva(camada, horas, atraso) {
+    const temps = horas.map(h => h.temp ?? 0);
+    const n = temps.length, W = LARGURA_HORA, H = ALTURA_CURVA;
+    const tMin = Math.min(...temps), tMax = Math.max(...temps);
+    const pts = temps.map((t, i) => [i * W + W / 2, 5 + (1 - (t - tMin) / (tMax - tMin || 1)) * (H - 10)]);
+
+    camada.innerHTML =
+        `<svg width="${n * W}" height="${H}" viewBox="0 0 ${n * W} ${H}" aria-hidden="true">` +
+        `<polyline class="c-linha" points="${pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ")}"/>` +
+        pts.map(([x, y]) => `<circle class="c-ponto" cx="${x}" cy="${y.toFixed(1)}" r="3"/>`).join("") +
+        `</svg>`;
+
+    const svg = camada.firstChild;
+    const linha = svg.querySelector(".c-linha");
+    const comprimento = linha.getTotalLength();
+    const tl = gsap.timeline({ delay: atraso });
+    tl.fromTo(linha, { strokeDasharray: comprimento, strokeDashoffset: comprimento },
+        { strokeDashoffset: 0, duration: .9, ease: "power2.inOut", clearProps: "strokeDasharray,strokeDashoffset" }, 0);
+    tl.from(svg.querySelectorAll(".c-ponto"), { scale: 0, transformOrigin: "50% 50%", duration: .3,
+        stagger: .9 / n, ease: "back.out(2)" }, .05);
+}
 // roda do mouse rola para o lado, arrastar com o mouse rola a faixa,
 // e um esmaecido na borda indica que há mais horários
 function ativarRolagemHorizontal(rolagem) {
@@ -666,21 +714,32 @@ function ativarRolagemHorizontal(rolagem) {
         rolagem.scrollLeft += e.deltaY;
     }, { passive: false });
 
+    // o arraste só começa depois de 5 px: assim um clique simples ainda seleciona a coluna
     let arrasto = null;
     rolagem.addEventListener("pointerdown", e => {
         if (e.pointerType !== "mouse") return;                  // no toque, a rolagem nativa já funciona
-        arrasto = { x: e.clientX, inicio: rolagem.scrollLeft };
-        rolagem.classList.add("arrastando");
-        rolagem.setPointerCapture(e.pointerId);
+        arrasto = { x: e.clientX, inicio: rolagem.scrollLeft, ativo: false, id: e.pointerId };
+        rolagem.dataset.arrastou = "0";
     });
     rolagem.addEventListener("pointermove", e => {
-        if (arrasto) rolagem.scrollLeft = arrasto.inicio - (e.clientX - arrasto.x);
+        if (!arrasto) return;
+        const dx = e.clientX - arrasto.x;
+        if (!arrasto.ativo && Math.abs(dx) > 5) {
+            arrasto.ativo = true;
+            rolagem.dataset.arrastou = "1";
+            rolagem.classList.add("arrastando");
+            rolagem.setPointerCapture(arrasto.id);
+        }
+        if (arrasto.ativo) rolagem.scrollLeft = arrasto.inicio - dx;
     });
-    const soltar = () => { arrasto = null; rolagem.classList.remove("arrastando"); };
+    const soltar = () => {
+        arrasto = null;
+        rolagem.classList.remove("arrastando");
+        setTimeout(() => { rolagem.dataset.arrastou = "0"; }, 0);   // libera cliques depois do arraste
+    };
     rolagem.addEventListener("pointerup", soltar);
     rolagem.addEventListener("pointercancel", soltar);
 }
-
 /* ---------- Histórico ---------- */
 function carregarHistorico() {
     const listaDados = historicoSessao;

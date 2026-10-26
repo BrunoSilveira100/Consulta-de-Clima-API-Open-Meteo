@@ -146,7 +146,8 @@ Acima da faixa, um aviso resume a janela de chuva: "Leve guarda-chuva: chuva mai
 | `codigo`, `dia` | `hourly=weather_code,is_day` |
 
 A API agrupa as 120 horas (5 dias × 24 h) por data. A resposta completa fica em torno de 11 KB, e continua sendo uma única chamada à Open-Meteo.
-Os horários vêm no fuso da cidade consultada (`timezone=auto`). Os campos novos chegam na mesma requisição da previsão, sem chamadas extras. O motivo de incluir o UV: um dia com 0% de chuva pode ter índice UV 9 ("muito alto"), e essa informação não aparecia em nenhum outro lugar da tela.
+
+**Animações.** Os ícones do Hora a hora e dos Próximos 5 dias ganham movimento (sol girando devagar, nuvens balançando com fase diferente por coluna, chuva caindo e raio piscando). Na faixa, o aviso desliza, as colunas entram em cascata, a linha de temperatura é desenhada da esquerda para a direita com os pontos surgindo um a um, a % de chuva conta até o valor e as barras crescem de baixo para cima. As colunas sobem no hover e a escolhida fica destacada em azul. Os Próximos 5 dias entram em cascata, sobem no hover e dão um pulso ao clicar. Só `transform`, `opacity` e `stroke-dashoffset` são animados, sempre partindo do estado final, e `prefers-reduced-motion` desliga o movimento.Os horários vêm no fuso da cidade consultada (`timezone=auto`). Os campos novos chegam na mesma requisição da previsão, sem chamadas extras. O motivo de incluir o UV: um dia com 0% de chuva pode ter índice UV 9 ("muito alto"), e essa informação não aparecia em nenhum outro lugar da tela.
 
 ## Testes no Postman
 
